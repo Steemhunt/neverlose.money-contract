@@ -1,0 +1,28 @@
+{
+  "manifestVersion": "2.2",
+  "contracts": {
+    "HuntToken": "HuntToken",
+    "HuntPool": "HuntPool",
+    "WarrenToken": "WarrenToken",
+    "WarrenRewardPool": "WarrenRewardPool"
+  },
+  "dependencies": {},
+  "name": "hunt",
+  "version": "0.1.0",
+  "compiler": {
+    "compilerSettings": {
+      "optimizer": {
+        "enabled": false,
+        "runs": "200"
+      }
+    },
+    "typechain": {
+      "enabled": false
+    },
+    "manager": "openzeppelin",
+    "solcVersion": "0.6.12",
+    "artifactsDir": "build/contracts",
+    "contractsDir": "contracts"
+  },
+  "telemetryOptIn": true
+}
