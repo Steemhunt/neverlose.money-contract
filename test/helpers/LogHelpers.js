@@ -20,10 +20,10 @@ async function printTokenStats(lockUpPool, tokenAddress) {
   });
 }
 
-async function printWarrenEarned(lockUpPool, tokenAddress, accounts) {
+async function printWRNEarned(lockUpPool, tokenAddress, accounts) {
   console.log("----------------- WARREN Earned (Pending) -----------------");
   for (let i = 0; i < accounts.length; i++) {
-    const pending = (await lockUpPool.pendingWarren(tokenAddress, { from: accounts[i] })).valueOf().toString();
+    const pending = (await lockUpPool.pendingWRN(tokenAddress, { from: accounts[i] })).valueOf().toString();
     const effectiveTotalLockUp = (await lockUpPool.myEffectiveLockUpTotal(tokenAddress, { from: accounts[i] })).valueOf().toString();
     console.log(` 🙍🏻‍♂️ Account #${i}: ${pending / 1e18} WARREN (Effective Lock Up: ${effectiveTotalLockUp / 1e18})`);
   }
@@ -31,5 +31,5 @@ async function printWarrenEarned(lockUpPool, tokenAddress, accounts) {
 
 module.exports = {
   printTokenStats,
-  printWarrenEarned,
+  printWRNEarned,
 };

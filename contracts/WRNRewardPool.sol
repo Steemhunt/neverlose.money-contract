@@ -5,50 +5,55 @@ import './LockUpPool.sol';
 
 pragma solidity ^0.6.12;
 
-contract WarrenRewardPool is LockUpPool {
+contract WRNRewardPool is LockUpPool {
     using SafeMath for uint256;
     using SafeERC20 for ERC20PresetMinterPauserUpgradeSafe;
 
-    ERC20PresetMinterPauserUpgradeSafe public WRNToken; // WARREN Reward Token
+    ERC20PresetMinterPauserUpgradeSafe public WRNToken; // WRN Reward Token
 
-    // Total of 1M WRN tokens will be distributed for 4 years
-    //  - 0.1 WRN per block by default
-    //  - 0.5 WRN per block for the beta users (early participants)
-    uint256 public constant REWARD_START_BLOCK = block.number; // TODO: Set the future block
-    uint256 public constant REWARD_PER_BLOCK = 1e17; // 0.1 WRN
-    uint256 public REWARD_END_BLOCK = REWARD_START_BLOCK.add(8000000); // 8M blocks (appx 4 years)
-
-    // 5x distribution for the first 500k blocks (appx 3 months)
-    uint256 public constant REWARD_EARLY_BONUS_DURATION = 500000;
-    uint256 public constant REWARD_EARLY_BONUS_BOOST = 5;
+    uint256 public REWARD_START_BLOCK;
+    uint256 public REWARD_PER_BLOCK;
+    uint256 public REWARD_END_BLOCK;
+    uint256 public REWARD_EARLY_BONUS_END_BLOCK;
+    uint256 public REWARD_EARLY_BONUS_BOOST;
 
     uint256 public totalMultiplier;
     struct WRNStats {
-      uint256 multiplier; // For WARREN token distribution
-      uint256 accWarrenPerShare;
-      uint256 lastUpdatedAt;
+      uint256 multiplier; // For WRN token distribution
+      uint256 accWRNPerShare;
+      uint256 lastRewardBlock;
     }
 
     struct UserWRNReward {
-      uint256 pending; // It should be tracked in addition to `accWarrenPerShare` because halving affects on `warrenPerSecond`
       uint256 claimed; // Only for saving info
-      uint256 lastAccWarrenPerShare; // This is used instead of `debt` (accWarrenPerShare * share) due to halving
+      uint256 debt; // This is used instead of `debt` (accWRNPerShare * share) due to halving
     }
 
     // Token => WRNStats
-    mapping (address => WRNStats) private _warrenStats;
+    mapping (address => WRNStats) private _wrnStats;
 
     // Token => Account => UserWRNReward
-    mapping (address => mapping (address => UserWRNReward)) private _userWarrenRewards;
+    mapping (address => mapping (address => UserWRNReward)) private _userWRNRewards;
 
     event PoolAdded(address indexed tokenAddress, uint256 multiplier);
-    event WarrenMinted(uint256 currentPoolSize);
-    event WarrenClaimed(address indexed account, uint256 amount);
+    event WRNMinted(uint256 amount);
+    event WRNClaimed(address indexed account, uint256 amount);
 
     function initialize(address WRNAddress) public {
+      OwnableUpgradeSafe.__Ownable_init();
+
       WRNToken = ERC20PresetMinterPauserUpgradeSafe(WRNAddress);
 
-      OwnableUpgradeSafe.__Ownable_init();
+      // Total of 1M WRN tokens will be distributed for 4 years
+      //  - 0.1 WRN per block by default
+      //  - 0.5 WRN per block for the beta users (early participants)
+      REWARD_START_BLOCK = block.number; // TODO: Set the future block
+      REWARD_PER_BLOCK = 1e17; // 0.1 WRN
+      REWARD_END_BLOCK = REWARD_START_BLOCK.add(8000000); // 8M blocks (appx 4 years)
+
+      // 5x distribution for the first 500k blocks (appx 3 months)
+      REWARD_EARLY_BONUS_END_BLOCK = REWARD_START_BLOCK.add(500000);
+      REWARD_EARLY_BONUS_BOOST = 5;
     }
 
     // MARK: - Overiiding LockUpPool
@@ -58,8 +63,7 @@ contract WarrenRewardPool is LockUpPool {
 
       addLockUpPool(tokenAddress);
 
-      _warrenStats[tokenAddress].multiplier = multiplier;
-      _warrenStats[tokenAddress].lastUpdatedAt = block.timestamp > startAt ? block.timestamp : startAt;
+      _wrnStats[tokenAddress].multiplier = multiplier;
       totalMultiplier = totalMultiplier.add(multiplier);
 
       emit PoolAdded(tokenAddress, multiplier);
@@ -67,107 +71,87 @@ contract WarrenRewardPool is LockUpPool {
 
     // TODO:
     // function setPoolMultiplier(address tokenAddress, uint256 multiplier) public {
-
     // }
 
-    function doLockUp(address tokenAddress, uint256 amount, uint256 durationInMonths) external override _checkPoolExists(tokenAddress) {
-      _checkHalve();
-      _updateWarrenReward(tokenAddress, msg.sender);
+    function doLockUp(address tokenAddress, uint256 amount, uint256 durationInMonths) public override _checkPoolExists(tokenAddress) {
+      _updatePool(tokenAddress);
+
+      // shouldn't get the bonus that's already accumulated before the user joined
+      _userWRNRewards[tokenAddress][msg.sender].debt = _wrnStats[tokenAddress].accWRNPerShare
+        .mul(myEffectiveLockUpTotal(tokenAddress)).div(1e18);
 
       super.doLockUp(tokenAddress, amount, durationInMonths);
     }
 
-    function exit(address tokenAddress, uint256 lockUpIndex, bool force) external override _checkPoolExists(tokenAddress) {
-      _checkHalve();
-      _updateWarrenReward(tokenAddress, msg.sender);
+    function exit(address tokenAddress, uint256 lockUpIndex, bool force) public override _checkPoolExists(tokenAddress) {
+      _updatePool(tokenAddress);
 
       super.exit(tokenAddress, lockUpIndex, force);
     }
 
-    function _checkHalve() private {
-      require(block.timestamp >= startAt, 'not started yet');
-
-      if (block.timestamp >= periodFinish) { // First or halving
-        if (startedAt == 0) { // On first start
-          startedAt = block.timestamp;
-          periodFinish = startedAt.add(DURATION);
-        } else { // On halving
-          currentPoolSize = currentPoolSize.div(2);
-          periodFinish = periodFinish.add(DURATION);
-
-          emit HalvingCompleted(currentPoolSize, block.timestamp);
-        }
-
-        // This updates will affect on `accWarrenPerShare`, so the latest `earned` value should be saved
-        warrenPerSecond = currentPoolSize.div(DURATION);
-
-        WRNToken.mint(address(this), currentPoolSize);
-        emit WarrenMinted(currentPoolSize);
-      } else if (startedAt == 0 || periodFinish == 0) {
-        revert('fatal error on initialization');
+    // Return WRN per block over the given from to to block.
+    function getWRNPerBlock(uint256 from, uint256 to) private view returns (uint256) {
+      if (from > REWARD_END_BLOCK) { // Reward pool finished
+        return 0;
+      } else if (to >= REWARD_END_BLOCK) { // Partial finished
+        return REWARD_END_BLOCK.sub(from).mul(REWARD_PER_BLOCK);
+      } else if (to <= REWARD_EARLY_BONUS_END_BLOCK) { // Bonus period
+        return to.sub(from).mul(REWARD_EARLY_BONUS_BOOST).mul(REWARD_PER_BLOCK);
+      } else if (from >= REWARD_EARLY_BONUS_END_BLOCK) { // Bonus finished
+        return to.sub(from).mul(REWARD_PER_BLOCK);
+      } else { // Partial bonus period
+        return REWARD_EARLY_BONUS_END_BLOCK.sub(from).mul(REWARD_EARLY_BONUS_BOOST).mul(REWARD_PER_BLOCK).add(
+          to.sub(REWARD_EARLY_BONUS_END_BLOCK).mul(REWARD_PER_BLOCK)
+        );
       }
     }
 
-    function _updateWarrenReward(address tokenAddress, address account) private {
-      WRNStats storage warrenStat = _warrenStats[tokenAddress];
-      UserWRNReward storage userWarrenReward = _userWarrenRewards[tokenAddress][account];
-
-      warrenStat.accWarrenPerShare = getAccWarrenPerShare(tokenAddress);
-      warrenStat.lastUpdatedAt = lastTimeRewardApplicable();
-
-      userWarrenReward.pending = pendingWarren(tokenAddress);
-      userWarrenReward.lastAccWarrenPerShare = warrenStat.accWarrenPerShare;
-    }
-
-    function getAccWarrenPerShare(address tokenAddress) private view returns (uint256) {
-      uint256 totalEffectiveAmount = tokenStats[tokenAddress].effectiveTotalLockUp;
-      WRNStats storage warrenStat = _warrenStats[tokenAddress];
-
-      // Give nothing when the pool is empty
-      if(totalEffectiveAmount == 0) {
-        return _warrenStats[tokenAddress].accWarrenPerShare;
+    function _updatePool(address tokenAddress) private {
+      WRNStats storage wrnStat = _wrnStats[tokenAddress];
+      if (block.number <= wrnStat.lastRewardBlock) {
+        return;
       }
 
-      return warrenStat.accWarrenPerShare.add(
-        lastTimeRewardApplicable()
-          .sub(warrenStat.lastUpdatedAt) // The last time anyone lockup / exit
-          .mul(warrenPerSecond)
-          .mul(1e18)
-          .mul(warrenStat.multiplier)
-          .div(totalEffectiveAmount)
-      );
+      uint256 wrnToMint = getWRNPerBlock(wrnStat.lastRewardBlock, block.number)
+        .mul(wrnStat.multiplier)
+        .div(totalMultiplier);
+
+      TokenStats storage tokenStat = tokenStats[tokenAddress];
+      if (tokenStat.effectiveTotalLockUp > 0 && wrnToMint > 0) {
+        // WRNToken.mint(devaddr, wrnToMint.div(10)); // Dev pool?
+        WRNToken.mint(address(this), wrnToMint);
+        wrnStat.accWRNPerShare = wrnStat.accWRNPerShare.add(wrnToMint.mul(1e18).div(tokenStat.effectiveTotalLockUp));
+
+        emit WRNMinted(wrnToMint);
+      }
+
+      wrnStat.lastRewardBlock = block.number;
     }
 
-    function lastTimeRewardApplicable() private view returns (uint256) {
-        return Math.min(block.timestamp, periodFinish);
-    }
+    function pendingWRN(address tokenAddress) public view _checkPoolExists(tokenAddress) returns (uint256) {
+      WRNStats storage wrnStat = _wrnStats[tokenAddress];
+      UserWRNReward storage userWRNReward = _userWRNRewards[tokenAddress][msg.sender];
+      uint256 myShare = myEffectiveLockUpTotal(tokenAddress);
 
-    function pendingWarren(address tokenAddress) public view _checkPoolExists(tokenAddress) returns (uint256) {
-      UserWRNReward storage userWarrenReward = _userWarrenRewards[tokenAddress][msg.sender];
-
-      return myEffectiveLockUpTotal(tokenAddress)
-        .mul(getAccWarrenPerShare(tokenAddress).sub(userWarrenReward.lastAccWarrenPerShare)) // Only the accumulated value since the last update
+      return myShare.mul(wrnStat.accWRNPerShare)
+        .mul(wrnStat.multiplier)
+        .div(totalMultiplier)
         .div(1e18)
-        .add(userWarrenReward.pending);
+        .sub(userWRNReward.debt)
+        .sub(userWRNReward.claimed);
     }
 
-    function claimWarren(address tokenAddress) external _checkPoolExists(tokenAddress) {
-      _updateWarrenReward(tokenAddress, msg.sender);
+    function claimWRN(address tokenAddress) external _checkPoolExists(tokenAddress) {
+      _updatePool(tokenAddress);
 
-      uint256 amount = pendingWarren(tokenAddress);
+      uint256 amount = pendingWRN(tokenAddress);
       require(amount > 0, 'nothing to claim');
 
-      UserWRNReward storage userWarrenReward = _userWarrenRewards[tokenAddress][msg.sender];
+      UserWRNReward storage userWRNReward = _userWRNRewards[tokenAddress][msg.sender];
 
-      userWarrenReward.pending = 0;
-      userWarrenReward.claimed = userWarrenReward.claimed.add(amount);
+      userWRNReward.claimed = userWRNReward.claimed.add(amount);
       WRNToken.safeTransfer(msg.sender, amount);
 
-      emit WarrenClaimed(msg.sender, amount);
-    }
-
-    // TEST:
-    function getBlockTimestamp() public view returns (uint256) {
-      return block.number;
+      emit WRNClaimed(msg.sender, amount);
     }
 }

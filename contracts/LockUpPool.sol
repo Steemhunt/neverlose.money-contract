@@ -12,8 +12,8 @@ contract LockUpPool is Initializable, OwnableUpgradeSafe {
   using SafeMath for uint256;
   using SafeERC20 for IERC20;
 
-  uint256 private constant PENALTY_RATE = 10;
-  uint256 private constant PLATFORM_FEE_RATE = 3;
+  uint256 private PENALTY_RATE;
+  uint256 private PLATFORM_FEE_RATE;
 
   // TODO:
   // - Add brokenAt
@@ -72,9 +72,12 @@ contract LockUpPool is Initializable, OwnableUpgradeSafe {
 
   function initialize() public initializer {
     OwnableUpgradeSafe.__Ownable_init();
+
+    PENALTY_RATE = 10;
+    PLATFORM_FEE_RATE = 3;
   }
 
-  // Should be called on WarrenRewardPool#addLockUpRewardPool
+  // Should be called on WRNRewardPool#addLockUpRewardPool
   function addLockUpPool(address tokenAddress) public onlyOwner {
     require(tokenAddress.isContract(), 'tokeanAddress is not a contract');
     require(!tokenStats[tokenAddress].poolExists, 'pool already exists');
@@ -112,7 +115,7 @@ contract LockUpPool is Initializable, OwnableUpgradeSafe {
     return durationBoost;
   }
 
-  function doLockUp(address tokenAddress, uint256 amount, uint256 durationInMonths) external virtual _checkPoolExists(tokenAddress) {
+  function doLockUp(address tokenAddress, uint256 amount, uint256 durationInMonths) public virtual _checkPoolExists(tokenAddress) {
     require(amount > 0, 'lock up amount must be greater than 0');
     // require(durationInMonths >= 3, 'duration must be greater than or equal to 3'); // TEST
     require(durationInMonths <= 120, 'duration must be less than or equal to 120');
@@ -161,12 +164,12 @@ contract LockUpPool is Initializable, OwnableUpgradeSafe {
   }
 
   function lockedUpTimestamp(address tokenAddress, address account, uint256 lockUpId) public view returns (uint256) {
-    LockUp storage lockUp = _userLockUps[tokenAddress][msg.sender].lockUps[lockUpId];
+    LockUp storage lockUp = _userLockUps[tokenAddress][account].lockUps[lockUpId];
 
     return lockUp.unlockedTimestamp.sub(lockUp.durationInMonths.mul(2592000));
   }
 
-  function exit(address tokenAddress, uint256 lockUpId, bool force) external virtual _checkPoolExists(tokenAddress) {
+  function exit(address tokenAddress, uint256 lockUpId, bool force) public virtual _checkPoolExists(tokenAddress) {
     UserLockUp storage userLockUp = _userLockUps[tokenAddress][msg.sender];
     LockUp storage lockUp = userLockUp.lockUps[lockUpId];
 
