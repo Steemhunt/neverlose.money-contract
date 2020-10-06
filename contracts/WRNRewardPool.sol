@@ -25,15 +25,15 @@ contract WRNRewardPool is LockUpPool {
     }
 
     struct UserWRNReward {
-      uint256 claimed; // Only for saving info
-      uint256 debt; // This is used instead of `debt` (accWRNPerShare * share) due to halving
+      uint256 claimed;
+      uint256 debt;
     }
 
     // Token => WRNStats
-    mapping (address => WRNStats) private _wrnStats;
+    mapping (address => WRNStats) public wrnStats;
 
     // Token => Account => UserWRNReward
-    mapping (address => mapping (address => UserWRNReward)) private _userWRNRewards;
+    mapping (address => mapping (address => UserWRNReward)) public userWRNRewards;
 
     event PoolAdded(address indexed tokenAddress, uint256 multiplier);
     event WRNMinted(uint256 amount);
@@ -63,7 +63,7 @@ contract WRNRewardPool is LockUpPool {
 
       addLockUpPool(tokenAddress);
 
-      _wrnStats[tokenAddress].multiplier = multiplier;
+      wrnStats[tokenAddress].multiplier = multiplier;
       totalMultiplier = totalMultiplier.add(multiplier);
 
       emit PoolAdded(tokenAddress, multiplier);
@@ -76,11 +76,11 @@ contract WRNRewardPool is LockUpPool {
     function doLockUp(address tokenAddress, uint256 amount, uint256 durationInMonths) public override _checkPoolExists(tokenAddress) {
       _updatePool(tokenAddress);
 
-      // shouldn't get the bonus that's already accumulated before the user joined
-      _userWRNRewards[tokenAddress][msg.sender].debt = _wrnStats[tokenAddress].accWRNPerShare
-        .mul(myEffectiveLockUpTotal(tokenAddress)).div(1e18);
-
       super.doLockUp(tokenAddress, amount, durationInMonths);
+
+      // shouldn't get the bonus that's already accumulated before the user joined
+      userWRNRewards[tokenAddress][msg.sender].debt = wrnStats[tokenAddress].accWRNPerShare
+        .mul(myEffectiveLockUpTotal(tokenAddress)).div(1e18);
     }
 
     function exit(address tokenAddress, uint256 lockUpIndex, bool force) public override _checkPoolExists(tokenAddress) {
@@ -107,16 +107,14 @@ contract WRNRewardPool is LockUpPool {
     }
 
     function _updatePool(address tokenAddress) private {
-      WRNStats storage wrnStat = _wrnStats[tokenAddress];
+      WRNStats storage wrnStat = wrnStats[tokenAddress];
       if (block.number <= wrnStat.lastRewardBlock) {
         return;
       }
 
-      uint256 wrnToMint = getWRNPerBlock(wrnStat.lastRewardBlock, block.number)
-        .mul(wrnStat.multiplier)
-        .div(totalMultiplier);
-
       TokenStats storage tokenStat = tokenStats[tokenAddress];
+      uint256 wrnToMint = _getAccWRNTillNow(tokenAddress);
+
       if (tokenStat.effectiveTotalLockUp > 0 && wrnToMint > 0) {
         // WRNToken.mint(devaddr, wrnToMint.div(10)); // Dev pool?
         WRNToken.mint(address(this), wrnToMint);
@@ -128,12 +126,27 @@ contract WRNRewardPool is LockUpPool {
       wrnStat.lastRewardBlock = block.number;
     }
 
-    function pendingWRN(address tokenAddress) public view _checkPoolExists(tokenAddress) returns (uint256) {
-      WRNStats storage wrnStat = _wrnStats[tokenAddress];
-      UserWRNReward storage userWRNReward = _userWRNRewards[tokenAddress][msg.sender];
-      uint256 myShare = myEffectiveLockUpTotal(tokenAddress);
+    function _getAccWRNTillNow(address tokenAddress) private view returns (uint256) {
+      WRNStats storage wrnStat = wrnStats[tokenAddress];
 
-      return myShare.mul(wrnStat.accWRNPerShare)
+      return getWRNPerBlock(wrnStat.lastRewardBlock, block.number)
+        .mul(wrnStat.multiplier)
+        .div(totalMultiplier);
+    }
+
+    function pendingWRN(address tokenAddress) public view _checkPoolExists(tokenAddress) returns (uint256) {
+      TokenStats storage tokenStat = tokenStats[tokenAddress];
+      WRNStats storage wrnStat = wrnStats[tokenAddress];
+      UserWRNReward storage userWRNReward = userWRNRewards[tokenAddress][msg.sender];
+
+      uint256 accWRNPerShare = wrnStat.accWRNPerShare;
+      if (block.number > wrnStat.lastRewardBlock && tokenStat.effectiveTotalLockUp != 0) {
+        uint256 accWRNTillNow = _getAccWRNTillNow(tokenAddress);
+        accWRNPerShare = accWRNPerShare.add(accWRNTillNow.mul(1e18).div(tokenStat.effectiveTotalLockUp));
+      }
+
+      uint256 myShare = myEffectiveLockUpTotal(tokenAddress);
+      return myShare.mul(accWRNPerShare)
         .mul(wrnStat.multiplier)
         .div(totalMultiplier)
         .div(1e18)
@@ -147,7 +160,7 @@ contract WRNRewardPool is LockUpPool {
       uint256 amount = pendingWRN(tokenAddress);
       require(amount > 0, 'nothing to claim');
 
-      UserWRNReward storage userWRNReward = _userWRNRewards[tokenAddress][msg.sender];
+      UserWRNReward storage userWRNReward = userWRNRewards[tokenAddress][msg.sender];
 
       userWRNReward.claimed = userWRNReward.claimed.add(amount);
       WRNToken.safeTransfer(msg.sender, amount);

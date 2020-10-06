@@ -60,11 +60,11 @@ contract LockUpPool is Initializable, OwnableUpgradeSafe {
   // Whenever a user `add a lock-up` (set the amount accumulated before I join the pool):
   //   => userLockUp.bonusDebt = tokenStat.accBonusPerShare * effectiveAmount)
 
-  // Token => Account => UserLockUps
-  mapping (address => mapping (address => UserLockUp)) private _userLockUps;
-
   // Token => TokenStats
   mapping (address => TokenStats) public tokenStats;
+
+  // Token => Account => UserLockUps
+  mapping (address => mapping (address => UserLockUp)) public userLockUps;
 
   event LockedUp(address indexed token, address indexed account, uint256 amount, uint256 totalLockUp);
   event Exited(address indexed token, address indexed account, uint256 amount, uint256 penalty, uint256 fee, uint256 totalLockUp);
@@ -129,7 +129,7 @@ contract LockUpPool is Initializable, OwnableUpgradeSafe {
 
     // Add LockUp
     uint256 effectiveAmount = amount.mul(_durationBoost(durationInMonths));
-    UserLockUp storage userLockUp = _userLockUps[tokenAddress][msg.sender];
+    UserLockUp storage userLockUp = userLockUps[tokenAddress][msg.sender];
     userLockUp.lockUps.push(
       LockUp(
         durationInMonths,
@@ -156,21 +156,21 @@ contract LockUpPool is Initializable, OwnableUpgradeSafe {
 
   // TODO: Refactoring
   function myLockUp(address tokenAddress) public view _checkPoolExists(tokenAddress) returns (uint256, uint256) {
-    return (_userLockUps[tokenAddress][msg.sender].total, _userLockUps[tokenAddress][msg.sender].effectiveTotal);
+    return (userLockUps[tokenAddress][msg.sender].total, userLockUps[tokenAddress][msg.sender].effectiveTotal);
   }
 
   function myEffectiveLockUpTotal(address tokenAddress) public view _checkPoolExists(tokenAddress) returns (uint256) {
-    return _userLockUps[tokenAddress][msg.sender].effectiveTotal;
+    return userLockUps[tokenAddress][msg.sender].effectiveTotal;
   }
 
   function lockedUpTimestamp(address tokenAddress, address account, uint256 lockUpId) public view returns (uint256) {
-    LockUp storage lockUp = _userLockUps[tokenAddress][account].lockUps[lockUpId];
+    LockUp storage lockUp = userLockUps[tokenAddress][account].lockUps[lockUpId];
 
     return lockUp.unlockedTimestamp.sub(lockUp.durationInMonths.mul(2592000));
   }
 
   function exit(address tokenAddress, uint256 lockUpId, bool force) public virtual _checkPoolExists(tokenAddress) {
-    UserLockUp storage userLockUp = _userLockUps[tokenAddress][msg.sender];
+    UserLockUp storage userLockUp = userLockUps[tokenAddress][msg.sender];
     LockUp storage lockUp = userLockUp.lockUps[lockUpId];
 
     require(force || block.timestamp >= lockUp.unlockedTimestamp, 'has not unlocked yet');
@@ -212,7 +212,7 @@ contract LockUpPool is Initializable, OwnableUpgradeSafe {
 
   function earnedBonus(address tokenAddress) public view _checkPoolExists(tokenAddress) returns (uint256) {
     TokenStats storage tokenStat = tokenStats[tokenAddress];
-    UserLockUp storage userLockUp = _userLockUps[tokenAddress][msg.sender];
+    UserLockUp storage userLockUp = userLockUps[tokenAddress][msg.sender];
 
     return userLockUp.effectiveTotal
       .mul(tokenStat.accBonusPerShare).div(1e18)
@@ -228,7 +228,7 @@ contract LockUpPool is Initializable, OwnableUpgradeSafe {
     uint256 amount = earnedBonus(tokenAddress);
 
     TokenStats storage tokenStat = tokenStats[tokenAddress];
-    UserLockUp storage userLockUp = _userLockUps[tokenAddress][msg.sender];
+    UserLockUp storage userLockUp = userLockUps[tokenAddress][msg.sender];
 
     // Update user lockUp stats
     userLockUp.bonusClaimed = userLockUp.bonusClaimed.add(amount);
