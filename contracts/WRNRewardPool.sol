@@ -39,8 +39,8 @@ contract WRNRewardPool is LockUpPool {
   address public devAddress;
 
   event PoolAdded(address indexed tokenAddress, uint256 multiplier);
-  event WRNMinted(uint256 amount);
-  event WRNClaimed(address indexed account, uint256 amount);
+  event WRNMinted(address indexed tokenAddress, uint256 amount);
+  event WRNClaimed(address indexed tokenAddress, address indexed account, uint256 amount);
 
   function initialize(address WRNAddress) public {
     OwnableUpgradeSafe.__Ownable_init();
@@ -63,8 +63,16 @@ contract WRNRewardPool is LockUpPool {
 
   // MARK: - Overiiding LockUpPool
 
-  function addLockUpRewardPool(address tokenAddress, uint256 multiplier) public {
+  function addLockUpRewardPool(address tokenAddress, uint256 multiplier, bool shouldUpdate) public {
     require(multiplier >= 1, 'multiplier must be greater than or equal to 1');
+
+    if(shouldUpdate) {
+      // NOTE: This could fail with out-of-gas if too many tokens are added
+      // Adding a new pool without updating other existing pools may result in
+      // showing a bigger pending value until the pool gets updated, but
+      // it is not critical as `claimWRN` will update the pool eventually.
+      updateAllPools();
+    }
 
     addLockUpPool(tokenAddress);
 
@@ -79,7 +87,7 @@ contract WRNRewardPool is LockUpPool {
   // }
 
   function doLockUp(address tokenAddress, uint256 amount, uint256 durationInMonths) public override _checkPoolExists(tokenAddress) {
-    _updatePool(tokenAddress);
+    updatePool(tokenAddress);
 
     super.doLockUp(tokenAddress, amount, durationInMonths);
 
@@ -89,7 +97,7 @@ contract WRNRewardPool is LockUpPool {
   }
 
   function exit(address tokenAddress, uint256 lockUpIndex, bool force) public override _checkPoolExists(tokenAddress) {
-    _updatePool(tokenAddress);
+    updatePool(tokenAddress);
 
     super.exit(tokenAddress, lockUpIndex, force);
   }
@@ -111,7 +119,16 @@ contract WRNRewardPool is LockUpPool {
     }
   }
 
-  function _updatePool(address tokenAddress) private {
+  // Update all pools
+  // NOTE: This could fail with out-of-gas if too many tokens are added
+  function updateAllPools() public {
+    uint256 length = pools.length;
+    for (uint256 pid = 0; pid < length; ++pid) {
+      updatePool(pools[pid]);
+    }
+  }
+
+  function updatePool(address tokenAddress) public {
     WRNStats storage wrnStat = wrnStats[tokenAddress];
     if (block.number <= wrnStat.lastRewardBlock) {
       return;
@@ -120,12 +137,12 @@ contract WRNRewardPool is LockUpPool {
     TokenStats storage tokenStat = tokenStats[tokenAddress];
     uint256 wrnToMint = _getAccWRNTillNow(tokenAddress);
 
-    if (tokenStat.effectiveTotalLockUp > 0 && wrnToMint > 0) {
+    if (wrnStat.lastRewardBlock != 0 && tokenStat.effectiveTotalLockUp > 0 && wrnToMint > 0) {
       WRNToken.mint(devAddress, wrnToMint.div(9)); // 10% dev pool (120,000 / (1,080,000 + 120,000) = 10%)
       WRNToken.mint(address(this), wrnToMint);
       wrnStat.accWRNPerShare = wrnStat.accWRNPerShare.add(wrnToMint.mul(1e18).div(tokenStat.effectiveTotalLockUp));
 
-      emit WRNMinted(wrnToMint);
+      emit WRNMinted(tokenAddress, wrnToMint);
     }
 
     wrnStat.lastRewardBlock = block.number;
@@ -158,7 +175,7 @@ contract WRNRewardPool is LockUpPool {
   }
 
   function claimWRN(address tokenAddress) external _checkPoolExists(tokenAddress) {
-    _updatePool(tokenAddress);
+    updatePool(tokenAddress);
 
     uint256 amount = pendingWRN(tokenAddress);
     require(amount > 0, 'nothing to claim');
@@ -168,7 +185,7 @@ contract WRNRewardPool is LockUpPool {
     userWRNReward.claimed = userWRNReward.claimed.add(amount);
     WRNToken.safeTransfer(msg.sender, amount);
 
-    emit WRNClaimed(msg.sender, amount);
+    emit WRNClaimed(tokenAddress, msg.sender, amount);
   }
 
   function dev(address _devAddress) public onlyOwner {

@@ -63,6 +63,9 @@ contract LockUpPool is Initializable, OwnableUpgradeSafe {
   // Token => TokenStats
   mapping (address => TokenStats) public tokenStats;
 
+  // Array of all added tokens
+  address[] public pools;
+
   // Token => Account => UserLockUps
   mapping (address => mapping (address => UserLockUp)) public userLockUps;
 
@@ -82,6 +85,7 @@ contract LockUpPool is Initializable, OwnableUpgradeSafe {
     require(tokenAddress.isContract(), 'tokeanAddress is not a contract');
     require(!tokenStats[tokenAddress].poolExists, 'pool already exists');
 
+    pools.push(tokenAddress);
     tokenStats[tokenAddress].poolExists = true;
   }
 
