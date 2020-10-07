@@ -3,7 +3,14 @@ const ERC20Token = artifacts.require('ERC20Token');
 const SafeERC20 = artifacts.require('SafeERC20');
 const WRNRewardPool = artifacts.require('WRNRewardPool');
 const { toBN } = require('./helpers/NumberHelpers');
-const { printTokenStats, printWRNStats, printWRNEarned, printBlockNumber } = require('./helpers/LogHelpers.js');
+const {
+  printTokenStats,
+  printUserLockUps,
+  printWRNStats,
+  printWRNEarned,
+  printUserWRNReward,
+  printBlockNumber,
+} = require('./helpers/LogHelpers.js');
 
 contract('WRN Reward Pool Test', ([creator, alice, bob, carol]) => {
   beforeEach(async () => {
@@ -26,82 +33,132 @@ contract('WRN Reward Pool Test', ([creator, alice, bob, carol]) => {
 
     // give alice and bob some balance and approve
     await this.hunt.mint(alice, toBN(500), { from: creator });
-    await this.hunt.approve(this.wrnRewardPool.address, toBN(1000), { from: alice });
+    await this.hunt.approve(this.wrnRewardPool.address, toBN(500), { from: alice });
 
     await this.hunt.mint(bob, toBN(500), { from: creator });
-    await this.hunt.approve(this.wrnRewardPool.address, toBN(1000), { from: bob });
+    await this.hunt.approve(this.wrnRewardPool.address, toBN(500), { from: bob });
 
     await this.hunt.mint(carol, toBN(500), { from: creator });
-    await this.hunt.approve(this.wrnRewardPool.address, toBN(1000), { from: carol });
+    await this.hunt.approve(this.wrnRewardPool.address, toBN(500), { from: carol });
   });
 
-  it('rewardMultiplier should be increased', async () => {
-    assert.equal((await this.wrnRewardPool.totalMultiplier()).valueOf(), 2);
+  // it('rewardMultiplier should be increased', async () => {
+  //   assert.equal((await this.wrnRewardPool.totalMultiplier()).valueOf(), 2);
 
-    this.eth = await ERC20Token.new({ from: creator });
-    this.eth.initialize('Ethereum', 'ETH', toBN(1000));
-    this.wrnRewardPool.addLockUpRewardPool(this.eth.address, 1);
+  //   this.eth = await ERC20Token.new({ from: creator });
+  //   this.eth.initialize('Ethereum', 'ETH', toBN(1000));
+  //   this.wrnRewardPool.addLockUpRewardPool(this.eth.address, 1);
 
-    assert.equal((await this.wrnRewardPool.totalMultiplier()).valueOf(), 3);
-  });
+  //   assert.equal((await this.wrnRewardPool.totalMultiplier()).valueOf(), 3);
+  // });
 
-  it('should give initial supply to the creator', async () => {
-    assert.equal(
-      (await this.hunt.balanceOf(creator, { from: creator })).valueOf(),
-      toBN(1000)
-    );
-  });
-
-  it('should approve 10000 hunt allowance to the reward pool', async () => {
-    await this.hunt.approve(this.wrnRewardPool.address, '10000', { from: creator });
-
-    assert.equal(
-      (await this.hunt.allowance(creator, this.wrnRewardPool.address, { from: creator })).valueOf(),
-      '10000'
-    );
-  });
-
-  it('should have earned of 0 before staking', async () => {
-    assert.equal(
-      (await this.wrnRewardPool.pendingWRN(this.hunt.address, { from: creator })).valueOf(),
-      '0'
-    );
-  });
-
-  it('should update pending WRN once a block proceeds', async () => {
-    await this.wrnRewardPool.doLockUp(this.hunt.address, toBN(1), 3, { from: alice });
-    assert.equal((await this.wrnRewardPool.pendingWRN(this.hunt.address, { from: alice })).valueOf(), 0);
-    await time.advanceBlock();
-
-    assert.equal((await this.wrnRewardPool.pendingWRN(this.hunt.address, { from: alice })).valueOf() / 1e18, 0.5);
-  });
-
-  it('should update pending WRN on multiple accounts properly', async () => {
-    await this.wrnRewardPool.doLockUp(this.hunt.address, toBN(1), 3, { from: alice });
-    await this.wrnRewardPool.doLockUp(this.hunt.address, toBN(1), 3, { from: bob });
-
-    assert.equal((await this.wrnRewardPool.pendingWRN(this.hunt.address, { from: alice })).valueOf() / 1e18, 0.5);
-    assert.equal((await this.wrnRewardPool.pendingWRN(this.hunt.address, { from: bob })).valueOf(), 0);
-
-    await time.advanceBlock();
-
-    assert.equal((await this.wrnRewardPool.pendingWRN(this.hunt.address, { from: alice })).valueOf() / 1e18, 0.75);
-    assert.equal((await this.wrnRewardPool.pendingWRN(this.hunt.address, { from: bob })).valueOf() / 1e18, 0.25);
-  });
-
-  // it('should reward alice 2x since she has 2x more locked up', async () => {
-  //   await this.wrnRewardPool.doLockUp(this.hunt.address, toBN(2), 3, { from: alice });
-  //   await this.wrnRewardPool.doLockUp(this.hunt.address, toBN(1), 3, { from: bob });
-
-  //   // FIXME: Randomly fails!!
-  //   // await printTokenStats(this.wrnRewardPool, this.hunt.address);
-  //   // await printWRNEarned(this.wrnRewardPool, this.hunt.address, [alice, bob]);
-  //   //---------------------------
+  // it('should give initial supply to the creator', async () => {
   //   assert.equal(
-  //     +(await this.wrnRewardPool.pendingWRN(this.hunt.address, { from: alice })).valueOf().toString(),
-  //     2 * +(await this.wrnRewardPool.pendingWRN(this.hunt.address, { from: bob })).valueOf().toString()
+  //     (await this.hunt.balanceOf(creator, { from: creator })).valueOf(),
+  //     toBN(1000)
   //   );
   // });
+
+  // it('should approve 10000 hunt allowance to the reward pool', async () => {
+  //   await this.hunt.approve(this.wrnRewardPool.address, '10000', { from: creator });
+
+  //   assert.equal(
+  //     (await this.hunt.allowance(creator, this.wrnRewardPool.address, { from: creator })).valueOf(),
+  //     '10000'
+  //   );
+  // });
+
+  // it('should have earned of 0 before staking', async () => {
+  //   assert.equal(
+  //     (await this.wrnRewardPool.pendingWRN(this.hunt.address, { from: creator })).valueOf(),
+  //     '0'
+  //   );
+  // });
+
+  // it('should update pending WRN once a block proceeds', async () => {
+  //   await this.wrnRewardPool.doLockUp(this.hunt.address, toBN(1), 3, { from: alice });
+  //   assert.equal((await this.wrnRewardPool.pendingWRN(this.hunt.address, { from: alice })).valueOf(), 0);
+  //   await time.advanceBlock();
+
+  //   assert.equal((await this.wrnRewardPool.pendingWRN(this.hunt.address, { from: alice })).valueOf() / 1e18, 0.5);
+  // });
+
+  // it('should update pending WRN on multiple accounts properly', async () => {
+  //   await this.wrnRewardPool.doLockUp(this.hunt.address, toBN(1), 3, { from: alice });
+  //   await this.wrnRewardPool.doLockUp(this.hunt.address, toBN(1), 3, { from: bob });
+
+  //   assert.equal((await this.wrnRewardPool.pendingWRN(this.hunt.address, { from: alice })).valueOf() / 1e18, 0.5);
+  //   assert.equal((await this.wrnRewardPool.pendingWRN(this.hunt.address, { from: bob })).valueOf(), 0);
+
+  //   await time.advanceBlock();
+
+  //   assert.equal((await this.wrnRewardPool.pendingWRN(this.hunt.address, { from: alice })).valueOf() / 1e18, 0.75);
+  //   assert.equal((await this.wrnRewardPool.pendingWRN(this.hunt.address, { from: bob })).valueOf() / 1e18, 0.25);
+  // });
+
+  // it('should reward alice 2x since she has 2x more locked up', async () => {
+  //   await this.wrnRewardPool.doLockUp(this.hunt.address, toBN(3), 3, { from: alice }); // effective = 3 * 1 = 3
+  //   await this.wrnRewardPool.doLockUp(this.hunt.address, toBN(1), 3, { from: bob }); // effective = 1 * 1 = 1
+  //   // Block 1 - alice: 0.5 / bob: 0
+
+  //   await time.advanceBlock();
+
+  //   // Block 1 - alice: 0.5 + 0.5 * 3/4 = 0.875 / bob: 0.125
+
+  //   assert.equal((await this.wrnRewardPool.pendingWRN(this.hunt.address, { from: alice })).valueOf() / 1e18, 0.875);
+  //   assert.equal((await this.wrnRewardPool.pendingWRN(this.hunt.address, { from: bob })).valueOf() / 1e18, 0.125);
+  // });
+
+  // it('should calculate duration boost correctly', async () => {
+  //   await this.wrnRewardPool.doLockUp(this.hunt.address, toBN(1), 30, { from: alice }); // effective = 1 * 30/3 = 10
+  //   await this.wrnRewardPool.doLockUp(this.hunt.address, toBN(2), 11, { from: bob }); // effective = 2 * 3 = 6
+  //   // Block 1 - alice: 0.5 / bob: 0
+
+  //   await time.advanceBlock();
+
+  //   // Block 1 - alice: 0.5 + 0.5 * 10/16 = 0.8125 / bob: 0.5 * 6/16 = 0.1875
+
+  //   assert.equal((await this.wrnRewardPool.pendingWRN(this.hunt.address, { from: alice })).valueOf() / 1e18, 0.8125);
+  //   assert.equal((await this.wrnRewardPool.pendingWRN(this.hunt.address, { from: bob })).valueOf() / 1e18, 0.1875);
+  // });
+
+  it('should calculate reward pool multiplier correctly', async () => {
+    this.weth = await ERC20Token.new({ from: creator });
+    this.weth.initialize('WETH', 'WETH', toBN(1000));
+    await this.weth.mint(bob, toBN(500), { from: creator });
+    await this.weth.approve(this.wrnRewardPool.address, toBN(500), { from: bob });
+
+    this.wrnRewardPool.addLockUpRewardPool(this.weth.address, 3); // Total pool multiplier = 5
+
+    await this.wrnRewardPool.doLockUp(this.hunt.address, toBN(1), 3, { from: alice }); // 100% on HUNT pool, 0.5 * 2/5 = 0.2 -> HUNT pool
+    await this.wrnRewardPool.doLockUp(this.weth.address, toBN(1), 3, { from: bob }); // 100% on WETH pool, 0.5 * 3/5 = 0.3 -> WRETH pool
+    // Block 1 - alice: 0.2 / bob: 0
+await printTokenStats(this.wrnRewardPool, this.hunt.address);
+await printTokenStats(this.wrnRewardPool, this.weth.address);
+await printWRNStats(this.wrnRewardPool, this.hunt.address);
+await printWRNStats(this.wrnRewardPool, this.weth.address);
+
+await printUserLockUps(this.wrnRewardPool, this.hunt.address, alice);
+await printUserLockUps(this.wrnRewardPool, this.weth.address, bob);
+await printUserWRNReward(this.wrnRewardPool, this.hunt.address, alice);
+await printUserWRNReward(this.wrnRewardPool, this.weth.address, bob);
+console.log('=================', (await this.wrnRewardPool._getAccWRNTillNow(this.hunt.address, { from: alice })).valueOf().toString());
+console.log('=================', (await this.wrnRewardPool._getAccWRNTillNow(this.weth.address, { from: bob })).valueOf().toString());
+
+    assert.equal((await this.wrnRewardPool.pendingWRN(this.hunt.address, { from: alice })).valueOf() / 1e18, 0.2);
+    assert.equal((await this.wrnRewardPool.pendingWRN(this.weth.address, { from: bob })).valueOf() / 1e18, 0);
+
+    await time.advanceBlock();
+
+    // Block 1 - alice: 0.2 + 0.2 = 0.4 / bob: 0.3
+
+    // No WRN if not participated
+    assert.equal((await this.wrnRewardPool.pendingWRN(this.weth.address, { from: alice })).valueOf() / 1e18, 0);
+    assert.equal((await this.wrnRewardPool.pendingWRN(this.hunt.address, { from: bob })).valueOf() / 1e18, 0);
+
+    assert.equal((await this.wrnRewardPool.pendingWRN(this.hunt.address, { from: alice })).valueOf() / 1e18, 0.4);
+    assert.equal((await this.wrnRewardPool.pendingWRN(this.weth.address, { from: bob })).valueOf() / 1e18, 0.3);
+  });
 
   // it('should reward proportionally after some time', async () => {
   //   await this.wrnRewardPool.doLockUp(this.hunt.address, toBN(1), 3, { from: alice });

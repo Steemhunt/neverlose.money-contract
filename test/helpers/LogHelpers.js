@@ -22,6 +22,22 @@ async function printTokenStats(lockUpPool, tokenAddress) {
   });
 }
 
+async function printUserLockUps(lockUpPool, tokenAddress, account) {
+  const [
+    total,
+    effectiveTotal,
+    bonusClaimed,
+    bonusDebt,
+  ] = Object.values(await lockUpPool.userLockUps(tokenAddress, account)).map(v => v.valueOf().toString());
+
+  console.log("----------------- User LockUp Stats -----------------\n", {
+    total,
+    effectiveTotal,
+    bonusClaimed,
+    bonusDebt,
+  });
+}
+
 async function printWRNStats(lockUpPool, tokenAddress) {
   const [
     multiplier,
@@ -29,10 +45,22 @@ async function printWRNStats(lockUpPool, tokenAddress) {
     lastRewardBlock,
   ] = Object.values(await lockUpPool.wrnStats(tokenAddress)).map(v => v.valueOf().toString());
 
-  console.log("----------------- Token Stats -----------------\n", {
+  console.log("----------------- WRN Stats -----------------\n", {
     multiplier,
     accWRNPerShare,
     lastRewardBlock,
+  });
+}
+
+async function printUserWRNReward(lockUpPool, tokenAddress, account) {
+  const [
+    claimed,
+    debt,
+  ] = Object.values(await lockUpPool.userWRNRewards(tokenAddress, account)).map(v => v.valueOf().toString());
+
+  console.log("----------------- User WRN Stats -----------------\n", {
+    claimed,
+    debt,
   });
 }
 
@@ -51,7 +79,9 @@ async function printBlockNumber(point) {
 
 module.exports = {
   printTokenStats,
+  printUserLockUps,
   printWRNStats,
   printWRNEarned,
+  printUserWRNReward,
   printBlockNumber,
 };

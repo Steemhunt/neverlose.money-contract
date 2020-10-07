@@ -57,6 +57,8 @@ contract WRNRewardPool is LockUpPool {
     // 5x distribution for the first 500k blocks (appx 3 months)
     REWARD_EARLY_BONUS_END_BLOCK = REWARD_START_BLOCK.add(500000);
     REWARD_EARLY_BONUS_BOOST = 5;
+
+    devAddress = 0xAbcA91f4Fd79BCCc71143d2edE8D8bED3d78E042;
   }
 
   // MARK: - Overiiding LockUpPool
@@ -129,7 +131,7 @@ contract WRNRewardPool is LockUpPool {
     wrnStat.lastRewardBlock = block.number;
   }
 
-  function _getAccWRNTillNow(address tokenAddress) private view returns (uint256) {
+  function _getAccWRNTillNow(address tokenAddress) public view returns (uint256) {
     WRNStats storage wrnStat = wrnStats[tokenAddress];
 
     return getWRNPerBlock(wrnStat.lastRewardBlock, block.number)
@@ -150,8 +152,6 @@ contract WRNRewardPool is LockUpPool {
 
     uint256 myShare = myEffectiveLockUpTotal(tokenAddress);
     return myShare.mul(accWRNPerShare)
-      .mul(wrnStat.multiplier)
-      .div(totalMultiplier)
       .div(1e18)
       .sub(userWRNReward.debt)
       .sub(userWRNReward.claimed);
