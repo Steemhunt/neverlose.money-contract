@@ -56,7 +56,7 @@ contract('LockUp and Exit', ([creator, alice, bob]) => {
     const [amount, effectiveAmount,,,] = Object.values(await this.lockUpPool.userLockUps(this.hunt.address, creator, { from: creator }));
     assert.equal(amount.valueOf(), toBN(1000));
     assert.equal(effectiveAmount.valueOf(), toBN(1000));
-    const [amount1, effectiveAmount1,,,] = Object.values(await this.lockUpPool.myLockUp(this.hunt.address, alice, { from: alice }));
+    const [amount1, effectiveAmount1,,,] = Object.values(await this.lockUpPool.userLockUps(this.hunt.address, alice, { from: alice }));
     assert.equal(amount1.valueOf(), 0);
     assert.equal(effectiveAmount1.valueOf(), 0);
 
