@@ -7,7 +7,7 @@ module.exports = async function (deployer, network, [creator]) {
   if (['development', 'ganache'].indexOf(network) > -1) {
     await deployer.deploy(ERC20Token, { from: creator });
     const wrnToken = await ERC20Token.deployed();
-    hunt.initialize('Neverlose.money', 'WRN', toBN(10000));
+    wrnToken.initialize('Neverlose.money', 'WRN', toBN(10000));
 
     await deployer.deploy(ERC20Token, { from: creator });
     const hunt = await ERC20Token.deployed();
