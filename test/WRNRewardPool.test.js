@@ -1,6 +1,5 @@
 const { expectRevert, time } = require('@openzeppelin/test-helpers');
 const ERC20Token = artifacts.require('ERC20Token');
-const SafeERC20 = artifacts.require('SafeERC20');
 const WRNRewardPool = artifacts.require('WRNRewardPool');
 const { toBN } = require('./helpers/NumberHelpers');
 const {
@@ -26,7 +25,7 @@ contract('WRN Reward Pool Test', ([creator, alice, bob, carol]) => {
     // Add minter
     await this.wrn.addMinter(this.wrnRewardPool.address, { from: creator });
 
-    // Add HUNT and ETH to the pool
+    // Add HUNT pool
     this.wrnRewardPool.addLockUpRewardPool(this.hunt.address, 2, false);
 
     await this.hunt.approve(this.wrnRewardPool.address, toBN(1000), { from: creator });
