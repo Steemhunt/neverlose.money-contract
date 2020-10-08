@@ -4,6 +4,8 @@ const WRNRewardPool = artifacts.require('WRNRewardPool');
 const { toBN } = require('../test/helpers/NumberHelpers');
 
 module.exports = async function (deployer, network, [creator]) {
+  if (network === 'test') return;
+
   if (['development', 'ganache'].indexOf(network) > -1) {
     await deployer.deploy(ERC20Token, { from: creator });
     const wrnToken = await ERC20Token.deployed();
