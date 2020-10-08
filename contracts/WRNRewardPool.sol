@@ -42,8 +42,8 @@ contract WRNRewardPool is LockUpPool {
   event WRNMinted(address indexed tokenAddress, uint256 amount);
   event WRNClaimed(address indexed tokenAddress, address indexed account, uint256 amount);
 
-  function initialize(address WRNAddress) public {
-    OwnableUpgradeSafe.__Ownable_init();
+  function initialize(address WRNAddress) public initializer {
+    LockUpPool.initialize();
 
     WRNToken = ERC20PresetMinterPauserUpgradeSafe(WRNAddress);
 
@@ -58,7 +58,7 @@ contract WRNRewardPool is LockUpPool {
     REWARD_EARLY_BONUS_END_BLOCK = REWARD_START_BLOCK.add(500000);
     REWARD_EARLY_BONUS_BOOST = 5;
 
-    devAddress = 0xAbcA91f4Fd79BCCc71143d2edE8D8bED3d78E042;
+    devAddress = msg.sender;
   }
 
   // MARK: - Overiiding LockUpPool
@@ -93,7 +93,7 @@ contract WRNRewardPool is LockUpPool {
 
     // shouldn't get the bonus that's already accumulated before the user joined
     userWRNRewards[tokenAddress][msg.sender].debt = wrnStats[tokenAddress].accWRNPerShare
-      .mul(myEffectiveLockUpTotal(tokenAddress)).div(1e18);
+      .mul(userLockUps[tokenAddress][msg.sender].effectiveTotal).div(1e18);
   }
 
   function exit(address tokenAddress, uint256 lockUpIndex, bool force) public override _checkPoolExists(tokenAddress) {
@@ -156,7 +156,7 @@ contract WRNRewardPool is LockUpPool {
       .div(totalMultiplier);
   }
 
-  function pendingWRN(address tokenAddress) public view _checkPoolExists(tokenAddress) returns (uint256) {
+  function pendingWRN(address tokenAddress) public view returns (uint256) { // _checkPoolExists(tokenAddress)
     TokenStats storage tokenStat = tokenStats[tokenAddress];
     WRNStats storage wrnStat = wrnStats[tokenAddress];
     UserWRNReward storage userWRNReward = userWRNRewards[tokenAddress][msg.sender];
@@ -167,8 +167,8 @@ contract WRNRewardPool is LockUpPool {
       accWRNPerShare = accWRNPerShare.add(accWRNTillNow.mul(1e18).div(tokenStat.effectiveTotalLockUp));
     }
 
-    uint256 myShare = myEffectiveLockUpTotal(tokenAddress);
-    return myShare.mul(accWRNPerShare)
+    return userLockUps[tokenAddress][msg.sender].effectiveTotal
+      .mul(accWRNPerShare)
       .div(1e18)
       .sub(userWRNReward.debt)
       .sub(userWRNReward.claimed);

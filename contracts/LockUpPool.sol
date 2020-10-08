@@ -12,16 +12,17 @@ contract LockUpPool is Initializable, OwnableUpgradeSafe {
   using SafeMath for uint256;
   using SafeERC20 for IERC20;
 
-  uint256 private PENALTY_RATE;
-  uint256 private PLATFORM_FEE_RATE;
+  uint256 public PENALTY_RATE;
+  uint256 public PLATFORM_FEE_RATE;
 
   // TODO:
   // - Add brokenAt
   struct LockUp {
     uint256 durationInMonths;
-    uint256 unlockedTimestamp;
+    uint256 unlockedAt;
     uint256 amount;
     uint256 effectiveAmount; // amount * durationBoost
+    uint256 exitedAt;
   }
 
   struct UserLockUp {
@@ -29,6 +30,7 @@ contract LockUpPool is Initializable, OwnableUpgradeSafe {
     uint256 effectiveTotal;
     uint256 bonusClaimed;
     uint256 bonusDebt;
+    uint256 lockedUpCount;
     LockUp[] lockUps;
   }
 
@@ -70,7 +72,7 @@ contract LockUpPool is Initializable, OwnableUpgradeSafe {
   mapping (address => mapping (address => UserLockUp)) public userLockUps;
 
   event LockedUp(address indexed token, address indexed account, uint256 amount, uint256 totalLockUp);
-  event Exited(address indexed token, address indexed account, uint256 amount, uint256 penalty, uint256 fee, uint256 totalLockUp);
+  event Exited(address indexed token, address indexed account, uint256 amount, uint256 refundAmount, uint256 penalty, uint256 fee, uint256 remainingTotal);
   event BonusClaimed(address indexed token, address indexed account, uint256 amount);
 
   function initialize() public initializer {
@@ -137,15 +139,17 @@ contract LockUpPool is Initializable, OwnableUpgradeSafe {
     userLockUp.lockUps.push(
       LockUp(
         durationInMonths,
-        block.timestamp.add(durationInMonths.mul(2592000)), // unlockedTimestamp
+        block.timestamp.add(durationInMonths.mul(2592000)), // unlockedAt
         amount,
-        effectiveAmount
+        effectiveAmount,
+        0
       )
     );
 
     // Update user lockUp stats
     userLockUp.total = userLockUp.total.add(amount);
     userLockUp.effectiveTotal = userLockUp.effectiveTotal.add(effectiveAmount);
+    userLockUp.lockedUpCount = userLockUp.lockedUpCount.add(1);
 
     // Update TokenStats
     TokenStats storage tokenStat = tokenStats[tokenAddress];
@@ -158,37 +162,45 @@ contract LockUpPool is Initializable, OwnableUpgradeSafe {
     emit LockedUp(tokenAddress, msg.sender, amount, tokenStat.totalLockUp);
   }
 
-  // TODO: Refactoring
-  function myLockUp(address tokenAddress) public view _checkPoolExists(tokenAddress) returns (uint256, uint256) {
-    return (userLockUps[tokenAddress][msg.sender].total, userLockUps[tokenAddress][msg.sender].effectiveTotal);
-  }
-
-  function myEffectiveLockUpTotal(address tokenAddress) public view _checkPoolExists(tokenAddress) returns (uint256) {
-    return userLockUps[tokenAddress][msg.sender].effectiveTotal;
-  }
-
-  function lockedUpTimestamp(address tokenAddress, address account, uint256 lockUpId) public view returns (uint256) {
+  function getLockUp(address tokenAddress, address account, uint256 lockUpId) public view returns (uint256, uint256, uint256, uint256) {
     LockUp storage lockUp = userLockUps[tokenAddress][account].lockUps[lockUpId];
 
-    return lockUp.unlockedTimestamp.sub(lockUp.durationInMonths.mul(2592000));
+    return (
+      lockUp.durationInMonths,
+      lockUp.unlockedAt,
+      lockUp.amount,
+      lockUp.effectiveAmount
+    );
+  }
+
+  function lockedUpAt(address tokenAddress, address account, uint256 lockUpId) public view returns (uint256) {
+    LockUp storage lockUp = userLockUps[tokenAddress][account].lockUps[lockUpId];
+
+    return lockUp.unlockedAt.sub(lockUp.durationInMonths.mul(2592000));
   }
 
   function exit(address tokenAddress, uint256 lockUpId, bool force) public virtual _checkPoolExists(tokenAddress) {
     UserLockUp storage userLockUp = userLockUps[tokenAddress][msg.sender];
     LockUp storage lockUp = userLockUp.lockUps[lockUpId];
 
-    require(force || block.timestamp >= lockUp.unlockedTimestamp, 'has not unlocked yet');
+    require(force || block.timestamp >= lockUp.unlockedAt, 'has not unlocked yet');
 
-    uint256 penalty = 0;
+    uint256 penalty = 10;
     uint256 fee = 0;
 
     // Penalty
-    if (force && block.timestamp < lockUp.unlockedTimestamp) {
+    if (force && block.timestamp < lockUp.unlockedAt) {
       penalty = lockUp.amount.mul(PENALTY_RATE).div(100);
       fee = lockUp.amount.mul(PLATFORM_FEE_RATE).div(100);
+      // revert(string(abi.encodePacked(penalty, '+', fee)));
+    } else if (force) {
+      revert('force not necessary');
     }
 
-    uint256 refundAmount = lockUp.amount - penalty - fee;
+    uint256 refundAmount = lockUp.amount.sub(penalty).sub(fee);
+
+    // Update lockUp
+    lockUp.exitedAt = block.timestamp;
 
     // Update user lockUp stats
     userLockUp.total = userLockUp.total.sub(lockUp.amount);
@@ -212,6 +224,8 @@ contract LockUpPool is Initializable, OwnableUpgradeSafe {
     IERC20 token = IERC20(tokenAddress);
     token.safeTransfer(msg.sender, refundAmount);
     token.safeTransfer(owner(), fee); // Platform fee
+
+    emit Exited(tokenAddress, msg.sender, lockUp.amount, refundAmount, penalty, fee, userLockUp.total);
   }
 
   function earnedBonus(address tokenAddress) public view _checkPoolExists(tokenAddress) returns (uint256) {

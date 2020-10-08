@@ -28,6 +28,8 @@ async function printUserLockUps(lockUpPool, tokenAddress, account) {
     effectiveTotal,
     bonusClaimed,
     bonusDebt,
+    lockedUpCount,
+    lockUps,
   ] = Object.values(await lockUpPool.userLockUps(tokenAddress, account)).map(v => v.valueOf().toString());
 
   console.log("----------------- User LockUp Stats -----------------\n", {
@@ -35,6 +37,24 @@ async function printUserLockUps(lockUpPool, tokenAddress, account) {
     effectiveTotal,
     bonusClaimed,
     bonusDebt,
+  });
+}
+
+async function printLockUp(lockUpPool, tokenAddress, account, index) {
+  const [
+    durationInMonths,
+    unlockedAt,
+    amount,
+    effectiveAmount,
+    exitedAt,
+  ] = Object.values(await lockUpPool.getLockUp(tokenAddress, account, index)).map(v => v.valueOf().toString());
+
+  console.log("----------------- LockUp -----------------\n", {
+    durationInMonths,
+    unlockedAt,
+    amount,
+    effectiveAmount,
+    exitedAt,
   });
 }
 
@@ -68,7 +88,8 @@ async function printWRNEarned(lockUpPool, tokenAddress, accounts) {
   console.log("----------------- WARREN Earned (Pending) -----------------");
   for (let i = 0; i < accounts.length; i++) {
     const pending = (await lockUpPool.pendingWRN(tokenAddress, { from: accounts[i] })).valueOf().toString();
-    const effectiveTotalLockUp = (await lockUpPool.myEffectiveLockUpTotal(tokenAddress, { from: accounts[i] })).valueOf().toString();
+
+    const [,effectiveTotalLockUp,,,] = Object.values(await lockUpPool.userLockUps(tokenAddress, account)).map(v => v.valueOf().toString());
     console.log(` 🙍🏻‍♂️ Account #${i}: ${pending / 1e18} WARREN (Effective Lock Up: ${effectiveTotalLockUp / 1e18})`);
   }
 }
@@ -84,4 +105,5 @@ module.exports = {
   printWRNEarned,
   printUserWRNReward,
   printBlockNumber,
+  printLockUp,
 };

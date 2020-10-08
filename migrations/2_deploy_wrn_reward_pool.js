@@ -1,10 +1,9 @@
-const { expectRevert, time } = require('@openzeppelin/test-helpers');
-const ERC20Token = artifacts.require('ERC20Token');
-const WRNRewardPool = artifacts.require('WRNRewardPool');
-const { toBN } = require('../test/helpers/NumberHelpers');
-
 module.exports = async function (deployer, network, [creator]) {
   if (network === 'test') return;
+
+  const ERC20Token = artifacts.require('ERC20Token');
+  const WRNRewardPool = artifacts.require('WRNRewardPool');
+  const { toBN } = require('../test/helpers/NumberHelpers');
 
   if (['development', 'ganache'].indexOf(network) > -1) {
     await deployer.deploy(ERC20Token, { from: creator });

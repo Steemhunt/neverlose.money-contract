@@ -53,7 +53,7 @@ contract('Basic contract functionality', ([creator]) => {
     await this.lockUpPool.doLockUp(this.hunt.address, 1000, 9, { from: creator });
 
     // My lockUp stats
-    const [amount, effectiveAmount] = Object.values(await this.lockUpPool.myLockUp(this.hunt.address, { from: creator }));
+    const [amount, effectiveAmount,,,] = Object.values(await this.lockUpPool.userLockUps(this.hunt.address, creator, { from: creator }));
     assert.equal(amount.valueOf(), 1000);
     assert.equal(effectiveAmount.valueOf(), 3000);
 
@@ -69,7 +69,7 @@ contract('Basic contract functionality', ([creator]) => {
     await this.lockUpPool.exit(this.hunt.address, 0, false, { from: creator });
 
     // My lockUp stats
-    const [amount, effectiveAmount] = Object.values(await this.lockUpPool.myLockUp(this.hunt.address, { from: creator }));
+    const [amount, effectiveAmount,,,] = Object.values(await this.lockUpPool.userLockUps(this.hunt.address, creator, { from: creator }));
     assert.equal(amount.valueOf(), 0);
     assert.equal(effectiveAmount.valueOf(), 0);
 

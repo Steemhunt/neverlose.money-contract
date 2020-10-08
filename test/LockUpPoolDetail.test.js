@@ -31,6 +31,15 @@ contract('LockUp and Exit', ([creator, alice, bob]) => {
     assert.equal((await this.hunt.balanceOf(creator, { from: creator })).valueOf(), toBN(8000));
   });
 
+  it('should cut penalty and platform fee', async () => {
+    await this.lockUpPool.doLockUp(this.hunt.address, toBN(1000), 3, { from: alice });
+    assert.equal((await this.hunt.balanceOf(alice)).valueOf() / 1e18, 0);
+    await this.lockUpPool.exit(this.hunt.address, 0, true, { from: alice });
+
+    // LockUp pool test again
+    assert.equal((await this.hunt.balanceOf(alice, { from: alice })).valueOf() / 1e18, 870);
+  });
+
   it('takes penalty and platform fee properly', async () => {
     await this.lockUpPool.doLockUp(this.hunt.address, toBN(1000), 3, { from: creator }); // duration boost: 1x
     await this.lockUpPool.doLockUp(this.hunt.address, toBN(1000), 12, { from: alice }); // duration boost: 4x
@@ -44,10 +53,10 @@ contract('LockUp and Exit', ([creator, alice, bob]) => {
     await this.lockUpPool.exit(this.hunt.address, 0, true, { from: alice });
 
     // My lockUp stats
-    const [amount, effectiveAmount] = Object.values(await this.lockUpPool.myLockUp(this.hunt.address, { from: creator }));
+    const [amount, effectiveAmount,,,] = Object.values(await this.lockUpPool.userLockUps(this.hunt.address, creator, { from: creator }));
     assert.equal(amount.valueOf(), toBN(1000));
     assert.equal(effectiveAmount.valueOf(), toBN(1000));
-    const [amount1, effectiveAmount1] = Object.values(await this.lockUpPool.myLockUp(this.hunt.address, { from: alice }));
+    const [amount1, effectiveAmount1,,,] = Object.values(await this.lockUpPool.myLockUp(this.hunt.address, alice, { from: alice }));
     assert.equal(amount1.valueOf(), 0);
     assert.equal(effectiveAmount1.valueOf(), 0);
 
