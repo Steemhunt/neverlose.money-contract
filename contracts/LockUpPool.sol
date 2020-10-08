@@ -228,7 +228,7 @@ contract LockUpPool is Initializable, OwnableUpgradeSafe {
     emit Exited(tokenAddress, msg.sender, lockUp.amount, refundAmount, penalty, fee, userLockUp.total);
   }
 
-  function earnedBonus(address tokenAddress) public view _checkPoolExists(tokenAddress) returns (uint256) {
+  function earnedBonus(address tokenAddress) public view returns (uint256) {
     TokenStats storage tokenStat = tokenStats[tokenAddress];
     UserLockUp storage userLockUp = userLockUps[tokenAddress][msg.sender];
 
@@ -238,7 +238,7 @@ contract LockUpPool is Initializable, OwnableUpgradeSafe {
       .sub(userLockUp.bonusClaimed); // The accumulated amount I already claimed
   }
 
-  function totalClaimableBonus(address tokenAddress) external view _checkPoolExists(tokenAddress) returns (uint256) {
+  function totalClaimableBonus(address tokenAddress) external view returns (uint256) {
     return tokenStats[tokenAddress].totalPenalty.sub(tokenStats[tokenAddress].totalClaimed);
   }
 

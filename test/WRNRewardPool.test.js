@@ -42,6 +42,20 @@ contract('WRN Reward Pool Test', ([creator, alice, bob, carol]) => {
     await this.hunt.approve(this.wrnRewardPool.address, toBN(500), { from: carol });
   });
 
+  it('should not update a non-existing pool info', async () => {
+    this.eth = await ERC20Token.new({ from: creator });
+    this.eth.initialize('Ethereum', 'ETH', toBN(1000));
+
+    await expectRevert(this.wrnRewardPool.updatePool(this.eth.address), 'token pool does not exist');
+  });
+
+  it('should not have any pending WRN for non-existing pool', async () => {
+    this.eth = await ERC20Token.new({ from: creator });
+    this.eth.initialize('Ethereum', 'ETH', toBN(1000));
+
+    assert.equal((await this.wrnRewardPool.pendingWRN(this.eth.address, { from: creator })).valueOf(), 0);
+  });
+
   it('rewardMultiplier should be increased', async () => {
     assert.equal((await this.wrnRewardPool.totalMultiplier()).valueOf(), 2);
 

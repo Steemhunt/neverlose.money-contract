@@ -86,7 +86,7 @@ contract WRNRewardPool is LockUpPool {
   // function setPoolMultiplier(address tokenAddress, uint256 multiplier) public {
   // }
 
-  function doLockUp(address tokenAddress, uint256 amount, uint256 durationInMonths) public override _checkPoolExists(tokenAddress) {
+  function doLockUp(address tokenAddress, uint256 amount, uint256 durationInMonths) public override {
     updatePool(tokenAddress);
 
     super.doLockUp(tokenAddress, amount, durationInMonths);
@@ -96,7 +96,7 @@ contract WRNRewardPool is LockUpPool {
       .mul(userLockUps[tokenAddress][msg.sender].effectiveTotal).div(1e18);
   }
 
-  function exit(address tokenAddress, uint256 lockUpIndex, bool force) public override _checkPoolExists(tokenAddress) {
+  function exit(address tokenAddress, uint256 lockUpIndex, bool force) public override {
     updatePool(tokenAddress);
 
     super.exit(tokenAddress, lockUpIndex, force);
@@ -128,7 +128,7 @@ contract WRNRewardPool is LockUpPool {
     }
   }
 
-  function updatePool(address tokenAddress) public {
+  function updatePool(address tokenAddress) public _checkPoolExists(tokenAddress) {
     WRNStats storage wrnStat = wrnStats[tokenAddress];
     if (block.number <= wrnStat.lastRewardBlock) {
       return;
@@ -156,7 +156,7 @@ contract WRNRewardPool is LockUpPool {
       .div(totalMultiplier);
   }
 
-  function pendingWRN(address tokenAddress) public view returns (uint256) { // _checkPoolExists(tokenAddress)
+  function pendingWRN(address tokenAddress) public view returns (uint256) {
     TokenStats storage tokenStat = tokenStats[tokenAddress];
     WRNStats storage wrnStat = wrnStats[tokenAddress];
     UserWRNReward storage userWRNReward = userWRNRewards[tokenAddress][msg.sender];
@@ -174,7 +174,7 @@ contract WRNRewardPool is LockUpPool {
       .sub(userWRNReward.claimed);
   }
 
-  function claimWRN(address tokenAddress) external _checkPoolExists(tokenAddress) {
+  function claimWRN(address tokenAddress) external {
     updatePool(tokenAddress);
 
     uint256 amount = pendingWRN(tokenAddress);
