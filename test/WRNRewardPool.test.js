@@ -27,7 +27,7 @@ contract('WRN Reward Pool Test', ([creator, alice, bob, carol]) => {
     await this.wrn.addMinter(this.wrnRewardPool.address, { from: creator });
 
     // Add HUNT pool
-    this.wrnRewardPool.addLockUpRewardPool(this.hunt.address, 2, false);
+    await this.wrnRewardPool.addLockUpRewardPool(this.hunt.address, 2, false);
 
     await this.hunt.approve(this.wrnRewardPool.address, toBN(1000), { from: creator });
 
@@ -61,7 +61,7 @@ contract('WRN Reward Pool Test', ([creator, alice, bob, carol]) => {
 
     this.eth = await ERC20Token.new({ from: creator });
     this.eth.initialize('Ethereum', 'ETH', toBN(1000));
-    this.wrnRewardPool.addLockUpRewardPool(this.eth.address, 1, false);
+    await this.wrnRewardPool.addLockUpRewardPool(this.eth.address, 1, false);
 
     assert.equal((await this.wrnRewardPool.totalMultiplier()).valueOf(), 3);
   });
@@ -142,7 +142,7 @@ contract('WRN Reward Pool Test', ([creator, alice, bob, carol]) => {
     await this.weth.mint(bob, toBN(500), { from: creator });
     await this.weth.approve(this.wrnRewardPool.address, toBN(500), { from: bob });
 
-    this.wrnRewardPool.addLockUpRewardPool(this.weth.address, 3, false); // Total pool multiplier = 5
+    await this.wrnRewardPool.addLockUpRewardPool(this.weth.address, 3, false); // Total pool multiplier = 5
 
     await this.wrnRewardPool.doLockUp(this.hunt.address, toBN(1), 3, { from: alice }); // 100% on HUNT pool, 0.5 * 2/5 = 0.2 -> HUNT pool
     await this.wrnRewardPool.doLockUp(this.weth.address, toBN(1), 3, { from: bob }); // 100% on WETH pool, 0.5 * 3/5 = 0.3 -> WRETH pool
@@ -171,7 +171,7 @@ contract('WRN Reward Pool Test', ([creator, alice, bob, carol]) => {
 
     await this.wrnRewardPool.doLockUp(this.hunt.address, toBN(1), 3, { from: alice }); // 100% on HUNT pool
     // Block 0 - alice: 0
-    this.wrnRewardPool.addLockUpRewardPool(this.weth.address, 3, true); // Total pool multiplier = 5
+    await this.wrnRewardPool.addLockUpRewardPool(this.weth.address, 3, true); // Total pool multiplier = 5
     // Block 1 - alice: 0.5
 
     // assert.equal((await this.wrn.totalSupply()).valueOf() / 1e18, 0.5 + 0.5/9);
@@ -186,6 +186,54 @@ contract('WRN Reward Pool Test', ([creator, alice, bob, carol]) => {
 
     assert.equal((await this.wrnRewardPool.pendingWRN(this.hunt.address, { from: alice })).valueOf() / 1e18, 0.9);
     assert.equal((await this.wrnRewardPool.pendingWRN(this.weth.address, { from: bob })).valueOf() / 1e18, 0.3);
+  });
+
+  it('adding a reward pool in the middle of other pools WITH updates', async () => {
+    this.weth = await ERC20Token.new({ from: creator });
+    this.weth.initialize('WETH', 'WETH', toBN(1000));
+    await this.weth.mint(bob, toBN(500), { from: creator });
+    await this.weth.approve(this.wrnRewardPool.address, toBN(500), { from: bob });
+
+    await this.wrnRewardPool.doLockUp(this.hunt.address, toBN(1), 3, { from: alice }); // 100% on HUNT pool
+    // Block 0 - alice: 0
+    await this.wrnRewardPool.addLockUpRewardPool(this.weth.address, 3, true); // Total pool multiplier becomes 5, but `accWRNPerShare` is not updated
+    // Block 1 - alice: 0.5
+
+    assert.equal((await this.wrnRewardPool.pendingWRN(this.hunt.address, { from: alice })).valueOf() / 1e18, 0.5);
+
+    await time.advanceBlock();
+    // Block 2 - alice: 0.5 + 0.2 = 0.7
+
+    assert.equal((await this.wrnRewardPool.pendingWRN(this.hunt.address, { from: alice })).valueOf() / 1e18, 0.7);
+
+    await this.wrnRewardPool.claimWRN(this.hunt.address, { from: alice });
+    // Block 3 - alice: 0.5 + 0.2 + 0.2 = 0.9 (if updated)
+
+    assert.equal((await this.wrn.balanceOf(alice, { from: alice })).valueOf() / 1e18, 0.9);
+  });
+
+
+  it('adding a reward pool in the middle of other pools WITHOUT updates', async () => {
+    this.weth = await ERC20Token.new({ from: creator });
+    this.weth.initialize('WETH', 'WETH', toBN(1000));
+    await this.weth.mint(bob, toBN(500), { from: creator });
+    await this.weth.approve(this.wrnRewardPool.address, toBN(500), { from: bob });
+
+    await this.wrnRewardPool.doLockUp(this.hunt.address, toBN(1), 3, { from: alice }); // 100% on HUNT pool
+    // Block 0 - alice: 0
+    await this.wrnRewardPool.addLockUpRewardPool(this.weth.address, 3, false); // Total pool multiplier becomes 5, but `accWRNPerShare` is not updated
+    // Block 1 - alice: 0.5
+
+    await time.advanceBlock();
+
+    // Block 2 - alice: 0.5 + 0.2 = 0.7 (if updated), but actual value: 0.2 + 0.2 = 0.4
+
+    assert.equal((await this.wrnRewardPool.pendingWRN(this.hunt.address, { from: alice })).valueOf() / 1e18, 0.4);
+
+    await this.wrnRewardPool.claimWRN(this.hunt.address, { from: alice });
+    // Block 3 - alice: 0.5 + 0.2 + 0.2 = 0.9 (if updated), but actual value: 0.2 + 0.2 + 0.2 = 0.6
+
+    assert.equal((await this.wrn.balanceOf(alice, { from: alice })).valueOf() / 1e18, 0.6);
   });
 
   it('should be able to cliam pending WRN', async () => {
@@ -211,8 +259,6 @@ contract('WRN Reward Pool Test', ([creator, alice, bob, carol]) => {
     assert.equal((await this.wrn.totalSupply()).valueOf() / 1e18, 0.5 + 0.5/9); // total minted
     assert.equal((await this.wrn.balanceOf(creator)).valueOf() / 1e18, 0.5/9); // dev pool
   });
-
-  // TODO: `addLockUpRewardPool` without updating all pools should not affect on actual claimed values
 
   // TODO: Exit & After Exit (& Force Exit)
 });

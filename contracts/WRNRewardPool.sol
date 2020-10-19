@@ -63,14 +63,14 @@ contract WRNRewardPool is LockUpPool {
 
   // MARK: - Overiiding LockUpPool
 
-  function addLockUpRewardPool(address tokenAddress, uint256 multiplier, bool shouldUpdate) public {
+  function addLockUpRewardPool(address tokenAddress, uint256 multiplier, bool shouldUpdate) public onlyOwner {
     require(multiplier >= 1, 'multiplier must be greater than or equal to 1');
 
     if(shouldUpdate) {
-      // NOTE: This could fail with out-of-gas if too many tokens are added
+      // NOTE: This could fail with out-of-gas if too many tokens are added.
       // Adding a new pool without updating other existing pools may result in
-      // showing a bigger pending value until the pool gets updated, but
-      // it is not critical as `claimWRN` will update the pool eventually.
+      // less pending & claimable value of exiting pools' WRN reward.
+      // So if this fails due to out-of-gas issue, the owner MUST update all pools manually
       updateAllPools();
     }
 
@@ -148,7 +148,7 @@ contract WRNRewardPool is LockUpPool {
     wrnStat.lastRewardBlock = block.number;
   }
 
-  function _getAccWRNTillNow(address tokenAddress) public view returns (uint256) {
+  function _getAccWRNTillNow(address tokenAddress) private view returns (uint256) {
     WRNStats storage wrnStat = wrnStats[tokenAddress];
 
     return getWRNPerBlock(wrnStat.lastRewardBlock, block.number)
