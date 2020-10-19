@@ -28,7 +28,7 @@ contract LockUpPool is Initializable, OwnableUpgradeSafe {
   struct UserLockUp {
     uint256 total;
     uint256 effectiveTotal;
-    uint256 bonusClaimed;
+    uint256 bonusClaimed; // only for information
     uint256 bonusDebt;
     uint256 lockedUpCount;
     LockUp[] lockUps;
@@ -54,7 +54,7 @@ contract LockUpPool is Initializable, OwnableUpgradeSafe {
   //   2. bonus: 150 (+50) & pool size: 200 (+100) -> 1 (prev value) + 50 / 200 = 1.25
   //   3. bonus: 250 (+100) & pool size: 230 (+30) -> 1.25 (prev value) + 100 / 230 = 1.68478
   //
-  //   bonusEarned = (userLockUp.effectiveTotal * tokenStat.accBonusPerShare) - userLockUp.bonusDebt - userLockUp.bonusClaimed
+  //   bonusEarned = (userLockUp.effectiveTotal * tokenStat.accBonusPerShare) - userLockUp.bonusDebt
   //
   // Whenever a user `exit with a penalty` (when the total pool size gets updated & bonus generated != 0):
   //   => tokenStat.accBonusPerShare + bonus generated (penalty amount) / tokenStat.effectiveTotalLockUp
@@ -91,19 +91,19 @@ contract LockUpPool is Initializable, OwnableUpgradeSafe {
     tokenStats[tokenAddress].poolExists = true;
   }
 
-  function addressToString(address _addr) public pure returns(string memory) {
-    bytes32 value = bytes32(uint256(_addr));
-    bytes memory alphabet = "0123456789abcdef";
+  // function addressToString(address _addr) public pure returns(string memory) {
+  //   bytes32 value = bytes32(uint256(_addr));
+  //   bytes memory alphabet = "0123456789abcdef";
 
-    bytes memory str = new bytes(51);
-    str[0] = "0";
-    str[1] = "x";
-    for (uint i = 0; i < 20; i++) {
-        str[2+i*2] = alphabet[uint(uint8(value[i + 12] >> 4))];
-        str[3+i*2] = alphabet[uint(uint8(value[i + 12] & 0x0f))];
-    }
-    return string(str);
-}
+  //   bytes memory str = new bytes(51);
+  //   str[0] = "0";
+  //   str[1] = "x";
+  //   for (uint i = 0; i < 20; i++) {
+  //       str[2+i*2] = alphabet[uint(uint8(value[i + 12] >> 4))];
+  //       str[3+i*2] = alphabet[uint(uint8(value[i + 12] & 0x0f))];
+  //   }
+  //   return string(str);
+  // }
 
   // TODO: Test gas consumptuion without this validation
   modifier _checkPoolExists(address tokenAddress) {
@@ -157,9 +157,14 @@ contract LockUpPool is Initializable, OwnableUpgradeSafe {
     tokenStat.effectiveTotalLockUp = tokenStat.effectiveTotalLockUp.add(effectiveAmount);
 
     // shouldn't get the bonus that's already accumulated before the user joined
-    userLockUp.bonusDebt = tokenStat.accBonusPerShare.mul(effectiveAmount).div(1e18);
+    _updateBonusDebt(tokenAddress, msg.sender);
 
     emit LockedUp(tokenAddress, msg.sender, amount, tokenStat.totalLockUp);
+  }
+
+  function _updateBonusDebt(address tokenAddress, address account) private {
+    userLockUps[tokenAddress][account].bonusDebt = tokenStats[tokenAddress].accBonusPerShare
+      .mul(userLockUps[tokenAddress][account].effectiveTotal).div(1e18);
   }
 
   function getLockUp(address tokenAddress, address account, uint256 lockUpId) public view returns (uint256, uint256, uint256, uint256) {
@@ -185,10 +190,13 @@ contract LockUpPool is Initializable, OwnableUpgradeSafe {
 
     require(force || block.timestamp >= lockUp.unlockedAt, 'has not unlocked yet');
 
-    uint256 penalty = 10;
+    // Should claim bonus before exit, otherwise `earnedBonus` will become zero afterwards
+    claimBonus(tokenAddress);
+
+    uint256 penalty = 0;
     uint256 fee = 0;
 
-    // Penalty
+    // Penalty on force exit
     if (force && block.timestamp < lockUp.unlockedAt) {
       penalty = lockUp.amount.mul(PENALTY_RATE).div(100);
       fee = lockUp.amount.mul(PLATFORM_FEE_RATE).div(100);
@@ -202,10 +210,6 @@ contract LockUpPool is Initializable, OwnableUpgradeSafe {
     // Update lockUp
     lockUp.exitedAt = block.timestamp;
 
-    // Update user lockUp stats
-    userLockUp.total = userLockUp.total.sub(lockUp.amount);
-    userLockUp.effectiveTotal = userLockUp.effectiveTotal.sub(lockUp.effectiveAmount);
-
     // Update token stats
     TokenStats storage tokenStat = tokenStats[tokenAddress];
     tokenStat.totalLockUp = tokenStat.totalLockUp.sub(lockUp.amount);
@@ -213,7 +217,12 @@ contract LockUpPool is Initializable, OwnableUpgradeSafe {
     tokenStat.totalPenalty = tokenStat.totalPenalty.add(penalty);
     tokenStat.totalPlatformFee = tokenStat.totalPlatformFee.add(fee);
 
-    // Update tokenStat.accBonusPerShare when reward pool gets updaterd
+    // Update user lockUp stats
+    userLockUp.total = userLockUp.total.sub(lockUp.amount);
+    userLockUp.effectiveTotal = userLockUp.effectiveTotal.sub(lockUp.effectiveAmount);
+    _updateBonusDebt(tokenAddress, msg.sender);
+
+    // Update tokenStat.accBonusPerShare when reward pool gets updated (when penalty added)
     //   * If the last person exit with a penalty, we don't update `accBonusPerShare`,
     //     so the penalty amount will be locked up on the contract permanently
     //     because the next person's reward debt is the left over amount
@@ -232,17 +241,18 @@ contract LockUpPool is Initializable, OwnableUpgradeSafe {
     TokenStats storage tokenStat = tokenStats[tokenAddress];
     UserLockUp storage userLockUp = userLockUps[tokenAddress][msg.sender];
 
+    // NOTE: it doesn't subtract `userLockUp.bonusClaimed` as it's already included in `userLockUp.bonusDebt`
+
     return userLockUp.effectiveTotal
       .mul(tokenStat.accBonusPerShare).div(1e18)
-      .sub(userLockUp.bonusDebt) // The accumulated amount before I join the pool
-      .sub(userLockUp.bonusClaimed); // The accumulated amount I already claimed
+      .sub(userLockUp.bonusDebt); // The accumulated amount before I join the pool
   }
 
   function totalClaimableBonus(address tokenAddress) external view returns (uint256) {
     return tokenStats[tokenAddress].totalPenalty.sub(tokenStats[tokenAddress].totalClaimed);
   }
 
-  function claimBonus(address tokenAddress) external _checkPoolExists(tokenAddress) {
+  function claimBonus(address tokenAddress) public _checkPoolExists(tokenAddress) {
     uint256 amount = earnedBonus(tokenAddress);
 
     TokenStats storage tokenStat = tokenStats[tokenAddress];
@@ -250,6 +260,7 @@ contract LockUpPool is Initializable, OwnableUpgradeSafe {
 
     // Update user lockUp stats
     userLockUp.bonusClaimed = userLockUp.bonusClaimed.add(amount);
+    _updateBonusDebt(tokenAddress, msg.sender);
 
     // Update token stats
     tokenStat.totalClaimed = tokenStat.totalClaimed.add(amount);

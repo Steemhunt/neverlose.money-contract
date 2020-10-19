@@ -191,8 +191,6 @@ contract('WRN Reward Pool Test', ([creator, alice, bob, carol]) => {
   it('adding a reward pool in the middle of other pools WITH updates', async () => {
     this.weth = await ERC20Token.new({ from: creator });
     this.weth.initialize('WETH', 'WETH', toBN(1000));
-    await this.weth.mint(bob, toBN(500), { from: creator });
-    await this.weth.approve(this.wrnRewardPool.address, toBN(500), { from: bob });
 
     await this.wrnRewardPool.doLockUp(this.hunt.address, toBN(1), 3, { from: alice }); // 100% on HUNT pool
     // Block 0 - alice: 0
@@ -212,12 +210,9 @@ contract('WRN Reward Pool Test', ([creator, alice, bob, carol]) => {
     assert.equal((await this.wrn.balanceOf(alice, { from: alice })).valueOf() / 1e18, 0.9);
   });
 
-
   it('adding a reward pool in the middle of other pools WITHOUT updates', async () => {
     this.weth = await ERC20Token.new({ from: creator });
     this.weth.initialize('WETH', 'WETH', toBN(1000));
-    await this.weth.mint(bob, toBN(500), { from: creator });
-    await this.weth.approve(this.wrnRewardPool.address, toBN(500), { from: bob });
 
     await this.wrnRewardPool.doLockUp(this.hunt.address, toBN(1), 3, { from: alice }); // 100% on HUNT pool
     // Block 0 - alice: 0
@@ -260,5 +255,29 @@ contract('WRN Reward Pool Test', ([creator, alice, bob, carol]) => {
     assert.equal((await this.wrn.balanceOf(creator)).valueOf() / 1e18, 0.5/9); // dev pool
   });
 
-  // TODO: Exit & After Exit (& Force Exit)
+  it('adding a reward pool in the middle of other pools WITH updates', async () => {
+    await this.wrnRewardPool.doLockUp(this.hunt.address, toBN(1), 3, { from: alice });
+    await this.wrnRewardPool.doLockUp(this.hunt.address, toBN(1), 3, { from: bob });
+
+    // Block 0 - alice: 0.5 / bob: 0
+
+    await time.advanceBlock();
+
+    // Block 1 - alice: 0.75 / bob: 0.25
+
+    await this.wrnRewardPool.exit(this.hunt.address, 0, true, { from: alice });
+
+    // Block 2 - alice: 1.0 (claimed) / bob: 0.5
+
+    await time.advanceBlock();
+
+    // Block 3 - alice: 1.0 (claimed) / bob: 0.5 + 0.5 = 1.0
+
+    // await printWRNStats(this.wrnRewardPool, this.hunt.address);
+    // await printUserWRNReward(this.wrnRewardPool, this.hunt.address, alice);
+
+    assert.equal((await this.wrnRewardPool.pendingWRN(this.hunt.address, { from: alice })).valueOf() / 1e18, 0);
+    assert.equal((await this.wrn.balanceOf(alice, { from: alice })).valueOf() / 1e18, 1.0);
+    assert.equal((await this.wrnRewardPool.pendingWRN(this.hunt.address, { from: bob })).valueOf() / 1e18, 1.0);
+  });
 });

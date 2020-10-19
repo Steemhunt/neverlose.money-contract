@@ -92,14 +92,21 @@ contract WRNRewardPool is LockUpPool {
     super.doLockUp(tokenAddress, amount, durationInMonths);
 
     // shouldn't get the bonus that's already accumulated before the user joined
-    userWRNRewards[tokenAddress][msg.sender].debt = wrnStats[tokenAddress].accWRNPerShare
-      .mul(userLockUps[tokenAddress][msg.sender].effectiveTotal).div(1e18);
+    _updateDebt(tokenAddress, msg.sender);
+  }
+
+  function _updateDebt(address tokenAddress, address account) private {
+    userWRNRewards[tokenAddress][account].debt = wrnStats[tokenAddress].accWRNPerShare
+      .mul(userLockUps[tokenAddress][account].effectiveTotal).div(1e18);
   }
 
   function exit(address tokenAddress, uint256 lockUpIndex, bool force) public override {
-    updatePool(tokenAddress);
+    // Should claim WRN before exit, otherwise `pendingWRN` will become zero afterwards
+    claimWRN(tokenAddress);
 
     super.exit(tokenAddress, lockUpIndex, force);
+
+    _updateDebt(tokenAddress, msg.sender);
   }
 
   // Return WRN per block over the given from to to block.
@@ -167,14 +174,14 @@ contract WRNRewardPool is LockUpPool {
       accWRNPerShare = accWRNPerShare.add(accWRNTillNow.mul(1e18).div(tokenStat.effectiveTotalLockUp));
     }
 
+    // NOTE: it doesn't subtract `userWRNReward.claimed` as it's already included in `userWRNReward.debt`
     return userLockUps[tokenAddress][msg.sender].effectiveTotal
       .mul(accWRNPerShare)
       .div(1e18)
-      .sub(userWRNReward.debt)
-      .sub(userWRNReward.claimed);
+      .sub(userWRNReward.debt);
   }
 
-  function claimWRN(address tokenAddress) external {
+  function claimWRN(address tokenAddress) public {
     updatePool(tokenAddress);
 
     uint256 amount = pendingWRN(tokenAddress);
@@ -183,6 +190,8 @@ contract WRNRewardPool is LockUpPool {
     UserWRNReward storage userWRNReward = userWRNRewards[tokenAddress][msg.sender];
 
     userWRNReward.claimed = userWRNReward.claimed.add(amount);
+    _updateDebt(tokenAddress, msg.sender);
+
     WRNToken.safeTransfer(msg.sender, amount);
 
     emit WRNClaimed(tokenAddress, msg.sender, amount);
