@@ -188,6 +188,7 @@ contract LockUpPool is Initializable, OwnableUpgradeSafe {
     UserLockUp storage userLockUp = userLockUps[tokenAddress][msg.sender];
     LockUp storage lockUp = userLockUp.lockUps[lockUpId];
 
+    require(lockUp.exitedAt == 0, 'already exited');
     require(force || block.timestamp >= lockUp.unlockedAt, 'has not unlocked yet');
 
     // Should claim bonus before exit, otherwise `earnedBonus` will become zero afterwards

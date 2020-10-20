@@ -31,14 +31,6 @@ contract('LockUp and Exit', ([creator, alice, bob]) => {
     assert.equal((await this.hunt.balanceOf(creator, { from: creator })).valueOf(), toBN(8000));
   });
 
-  it('should not cut any fee on matured lockup', async () => {
-    await this.lockUpPool.doLockUp(this.hunt.address, toBN(1000), 0, { from: alice });
-    await this.lockUpPool.exit(this.hunt.address, 0, false, { from: alice });
-
-    // LockUp pool test again
-    assert.equal((await this.hunt.balanceOf(alice, { from: alice })).valueOf() / 1e18, 1000);
-  });
-
   it('should cut penalty and platform fee', async () => {
     await this.lockUpPool.doLockUp(this.hunt.address, toBN(1000), 3, { from: alice });
     assert.equal((await this.hunt.balanceOf(alice)).valueOf() / 1e18, 0);

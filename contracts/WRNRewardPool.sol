@@ -147,7 +147,9 @@ contract WRNRewardPool is LockUpPool {
     if (wrnStat.lastRewardBlock != 0 && tokenStat.effectiveTotalLockUp > 0 && wrnToMint > 0) {
       WRNToken.mint(devAddress, wrnToMint.div(9)); // 10% dev pool (120,000 / (1,080,000 + 120,000) = 10%)
       WRNToken.mint(address(this), wrnToMint);
-      wrnStat.accWRNPerShare = wrnStat.accWRNPerShare.add(wrnToMint.mul(1e18).div(tokenStat.effectiveTotalLockUp));
+      wrnStat.accWRNPerShare = wrnStat.accWRNPerShare.add(
+        wrnToMint.mul(1e18).div(tokenStat.effectiveTotalLockUp)
+      );
 
       emit WRNMinted(tokenAddress, wrnToMint);
     }

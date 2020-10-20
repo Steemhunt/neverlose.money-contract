@@ -280,4 +280,23 @@ contract('WRN Reward Pool Test', ([creator, alice, bob, carol]) => {
     assert.equal((await this.wrn.balanceOf(alice, { from: alice })).valueOf() / 1e18, 1.0);
     assert.equal((await this.wrnRewardPool.pendingWRN(this.hunt.address, { from: bob })).valueOf() / 1e18, 1.0);
   });
+
+  it('calculate WRN reward properly when exit and re-entering', async () => {
+    await this.wrnRewardPool.doLockUp(this.hunt.address, toBN(1), 3, { from: alice });
+    await time.advanceBlock();
+    assert.equal((await this.wrnRewardPool.pendingWRN(this.hunt.address, { from: alice })).valueOf() / 1e18, 0.5);
+
+    await this.wrnRewardPool.exit(this.hunt.address, 0, true, { from: alice }); // Exit & Claim
+    assert.equal((await this.wrn.balanceOf(alice)).valueOf() / 1e18, 1.0);
+
+    await this.wrnRewardPool.doLockUp(this.hunt.address, toBN(1), 3, { from: alice });
+    await time.advanceBlock();
+    await time.advanceBlock();
+
+    assert.equal((await this.wrnRewardPool.pendingWRN(this.hunt.address, { from: alice })).valueOf() / 1e18, 1.0);
+
+    await this.wrnRewardPool.exit(this.hunt.address, 1, true, { from: alice }); // Exit & Claim
+
+    assert.equal((await this.wrn.balanceOf(alice)).valueOf() / 1e18, 2.5); // 1.0 + 1.5
+  });
 });
