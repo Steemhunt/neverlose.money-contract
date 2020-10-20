@@ -12,7 +12,7 @@ module.exports = async function (deployer, network, [creator]) {
 
     await deployer.deploy(ERC20Token, { from: creator });
     const hunt = await ERC20Token.deployed();
-    hunt.initialize('HUNT Token', 'WRN', toBN(10000));
+    hunt.initialize('HUNT Token', 'HUNT', toBN(10000));
 
     await deployer.deploy(ERC20Token, { from: creator });
     const weth = await ERC20Token.deployed();
