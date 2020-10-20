@@ -175,21 +175,31 @@ contract('LockUp and Exit', ([creator, alice, bob]) => {
 
     await this.lockUpPool.exit(this.hunt.address, 0, true, { from: creator }); // Force Exit!
 
-    // assert.equal((await this.lockUpPool.earnedBonus(this.hunt.address, { from: alice })).valueOf() / 1e18, 50);
-    // assert.equal((await this.lockUpPool.earnedBonus(this.hunt.address, { from: bob })).valueOf() / 1e18, 50);
+    // Earned: alice - 50 / bob - 50
 
     await this.lockUpPool.exit(this.hunt.address, 0, true, { from: alice }); // Force Exit & Claim bonus
-    // assert.equal((await this.lockUpPool.earnedBonus(this.hunt.address, { from: alice })).valueOf() / 1e18, 0);
-    // assert.equal((await this.hunt.balanceOf(alice, { from: alice })).valueOf(), toBN(920)); // 1000 + 50 - 130
-    // assert.equal((await this.lockUpPool.earnedBonus(this.hunt.address, { from: bob })).valueOf() / 1e18, 150);
 
-    // Alice - claimed: 50
+    // Earned: alice: 0 / bob: - 150
+    // Alice Balance - 1000 + 50 - 130 = 920
 
     await this.lockUpPool.doLockUp(this.hunt.address, toBN(1), 3, { from: alice });
+
+    // Alice balance - 919
 
     await this.lockUpPool.exit(this.hunt.address, 0, true, { from: bob }); // Force Exit & Claim bonus
     assert.equal((await this.lockUpPool.earnedBonus(this.hunt.address, { from: bob })).valueOf() / 1e18, 0);
     assert.equal((await this.hunt.balanceOf(bob)).valueOf(), toBN(1020)); // 1000 + 50 + 100 - 130 = 1020
     assert.equal((await this.lockUpPool.earnedBonus(this.hunt.address, { from: alice })).valueOf() / 1e18, 100);
+
+    await this.lockUpPool.doLockUp(this.hunt.address, toBN(100), 3, { from: bob });
+    await this.lockUpPool.exit(this.hunt.address, 1, true, { from: bob }); // Force Exit -> penalty: 10
+
+    assert.equal((await this.lockUpPool.earnedBonus(this.hunt.address, { from: alice })).valueOf() / 1e18, 110);
+
+    await this.lockUpPool.claimBonus(this.hunt.address, { from: alice }); // should claim 110
+    assert.equal((await this.hunt.balanceOf(alice, { from: alice })).valueOf() / 1e18, 1029); // 919 + 110
+
+    await this.lockUpPool.exit(this.hunt.address, 1, true, { from: alice }); // Force Exit: withdraw: 0.87 + penalty: 0.1 + fee: 0.03
+    assert.equal((await this.hunt.balanceOf(alice, { from: alice })).valueOf(), toBN(102987, 16)); // 1029 + 0.87
   });
 });
