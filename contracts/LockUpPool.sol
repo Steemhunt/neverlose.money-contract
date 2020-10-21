@@ -131,6 +131,9 @@ contract LockUpPool is Initializable, OwnableUpgradeSafe {
     require(token.balanceOf(msg.sender) >= amount, 'not enough balance');
     require(token.allowance(msg.sender, address(this)) >= amount, 'not enough allowance');
 
+    // Should claim bonus before exit, otherwise `earnedBonus` will become zero afterwards
+    claimBonus(tokenAddress);
+
     token.safeTransferFrom(msg.sender, address(this), amount);
 
     // Add LockUp
@@ -156,12 +159,12 @@ contract LockUpPool is Initializable, OwnableUpgradeSafe {
     tokenStat.totalLockUp = tokenStat.totalLockUp.add(amount);
     tokenStat.effectiveTotalLockUp = tokenStat.effectiveTotalLockUp.add(effectiveAmount);
 
-    // shouldn't get the bonus that's already accumulated before the user joined
     _updateBonusDebt(tokenAddress, msg.sender);
 
     emit LockedUp(tokenAddress, msg.sender, amount, tokenStat.totalLockUp);
   }
 
+  // Update user's bonus debt as current accumulated bonus value (accBonusPerShare * effectiveTotal)
   function _updateBonusDebt(address tokenAddress, address account) private {
     userLockUps[tokenAddress][account].bonusDebt = tokenStats[tokenAddress].accBonusPerShare
       .mul(userLockUps[tokenAddress][account].effectiveTotal).div(1e18);
@@ -255,6 +258,10 @@ contract LockUpPool is Initializable, OwnableUpgradeSafe {
 
   function claimBonus(address tokenAddress) public _checkPoolExists(tokenAddress) {
     uint256 amount = earnedBonus(tokenAddress);
+
+    if (amount == 0) {
+      return;
+    }
 
     TokenStats storage tokenStat = tokenStats[tokenAddress];
     UserLockUp storage userLockUp = userLockUps[tokenAddress][msg.sender];

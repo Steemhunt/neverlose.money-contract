@@ -86,18 +86,19 @@ contract WRNRewardPool is LockUpPool {
   // function setPoolMultiplier(address tokenAddress, uint256 multiplier) public {
   // }
 
+  function _updateDebt(address tokenAddress, address account) private {
+    userWRNRewards[tokenAddress][account].debt = wrnStats[tokenAddress].accWRNPerShare
+      .mul(userLockUps[tokenAddress][account].effectiveTotal).div(1e18);
+  }
+
   function doLockUp(address tokenAddress, uint256 amount, uint256 durationInMonths) public override {
-    updatePool(tokenAddress);
+    // Should claim WRN before exit, otherwise `pendingWRN` will become zero afterwards
+    claimWRN(tokenAddress);
 
     super.doLockUp(tokenAddress, amount, durationInMonths);
 
     // shouldn't get the bonus that's already accumulated before the user joined
     _updateDebt(tokenAddress, msg.sender);
-  }
-
-  function _updateDebt(address tokenAddress, address account) private {
-    userWRNRewards[tokenAddress][account].debt = wrnStats[tokenAddress].accWRNPerShare
-      .mul(userLockUps[tokenAddress][account].effectiveTotal).div(1e18);
   }
 
   function exit(address tokenAddress, uint256 lockUpIndex, bool force) public override {
@@ -189,7 +190,9 @@ contract WRNRewardPool is LockUpPool {
     updatePool(tokenAddress);
 
     uint256 amount = pendingWRN(tokenAddress);
-    require(amount > 0, 'nothing to claim');
+    if (amount == 0) {
+      return;
+    }
 
     UserWRNReward storage userWRNReward = userWRNRewards[tokenAddress][msg.sender];
 
