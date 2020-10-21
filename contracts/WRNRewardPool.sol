@@ -173,7 +173,9 @@ contract WRNRewardPool is LockUpPool {
     uint256 accWRNPerShare = wrnStat.accWRNPerShare;
     if (block.number > wrnStat.lastRewardBlock && tokenStat.effectiveTotalLockUp != 0) {
       uint256 accWRNTillNow = _getAccWRNTillNow(tokenAddress);
-      accWRNPerShare = accWRNPerShare.add(accWRNTillNow.mul(1e18).div(tokenStat.effectiveTotalLockUp));
+      accWRNPerShare = accWRNPerShare.add(
+        accWRNTillNow.mul(1e18).div(tokenStat.effectiveTotalLockUp)
+      );
     }
 
     // NOTE: it doesn't subtract `userWRNReward.claimed` as it's already included in `userWRNReward.debt`
