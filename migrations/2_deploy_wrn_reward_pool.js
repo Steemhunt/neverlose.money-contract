@@ -26,6 +26,8 @@ module.exports = async function (deployer, network, [creator]) {
     const wrnRewardPool = await WRNRewardPool.deployed();
     await wrnRewardPool.initialize(wrnToken.address);
 
+    await wrnToken.addMinter(wrnRewardPool.address, { from: creator });
+
     await wrnRewardPool.addLockUpRewardPool(hunt.address, 2, false);
     await wrnRewardPool.addLockUpRewardPool(weth.address, 1, false);
     await wrnRewardPool.addLockUpRewardPool(wbtc.address, 1, false);
