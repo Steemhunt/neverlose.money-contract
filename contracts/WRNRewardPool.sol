@@ -49,8 +49,8 @@ contract WRNRewardPool is LockUpPool {
 
     // Total of 1M WRN tokens will be distributed for 4 years
     //  - 0.1 WRN per block by default
-    //  - 0.5 WRN per block for the beta users (early participants)
-    REWARD_START_BLOCK = block.number; // TODO: Set the future block
+    //  - 0.5 WRN per block for beta users (early participants)
+    REWARD_START_BLOCK = block.number; // TODO: Set a future block on production
     REWARD_PER_BLOCK = 1e17; // 0.1 WRN
     REWARD_END_BLOCK = REWARD_START_BLOCK.add(8800000); // 8.8M blocks (appx 4 years and 3 months)
 
@@ -68,9 +68,13 @@ contract WRNRewardPool is LockUpPool {
 
     if(shouldUpdate) {
       // NOTE: This could fail with out-of-gas if too many tokens are added.
-      // Adding a new pool without updating other existing pools may result in
-      // less pending & claimable value of exiting pools' WRN reward.
-      // So if this fails due to out-of-gas issue, the owner MUST update all pools manually
+      // If this fails, the owner MUST update all pools manually
+      //
+      // Adding a new pool without updating other existing pools can cause
+      // a smaller WRN reward than it should be (both pending & claimable value) because
+      // `pendingWRN` value becomes smaller with a samller `accWRNPerShare` (= with a bigger `totalMultiplier`).
+      // We should save the old `accWRNPerShare` (calculated with the old, smaller `totalMultiplier`)
+      // for every pool to prevent this issue.
       updateAllPools();
     }
 
@@ -82,9 +86,24 @@ contract WRNRewardPool is LockUpPool {
     emit PoolAdded(tokenAddress, multiplier);
   }
 
-  // TODO:
-  // function setPoolMultiplier(address tokenAddress, uint256 multiplier) public {
-  // }
+  function updatePoolMultiplier(address tokenAddress, uint256 multiplier, bool shouldUpdate) public onlyOwner {
+    require(multiplier >= 1, 'multiplier must be greater than or equal to 1');
+
+    if(shouldUpdate) {
+      // NOTE: This could fail with out-of-gas if too many tokens are added.
+      // If this fails, the owner MUST update all pools manually
+      updateAllPools();
+    } else if (wrnStats[tokenAddress].multiplier > multiplier) {
+      // Decreasing multiplier shouldn't be allowed without `updateAllPools` calls because
+      // users can temporarily withdraw a bigger WRN reward than they actually have
+      // (caused by smaller `totalMultiplier` => bigger `accWRNPerShare`)
+
+      revert('cannot update to a smaller value without updating all pools');
+    }
+
+    totalMultiplier = totalMultiplier.sub(wrnStats[tokenAddress].multiplier).add(multiplier);
+    wrnStats[tokenAddress].multiplier = multiplier;
+  }
 
   function _updateDebt(address tokenAddress, address account) private {
     userWRNRewards[tokenAddress][account].debt = wrnStats[tokenAddress].accWRNPerShare

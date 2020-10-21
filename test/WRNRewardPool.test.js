@@ -139,7 +139,7 @@ contract('WRN Reward Pool Test', ([creator, alice, bob]) => {
     await this.weth.mint(bob, toBN(500), { from: creator });
     await this.weth.approve(this.wrnRewardPool.address, toBN(500), { from: bob });
 
-    await this.wrnRewardPool.addLockUpRewardPool(this.weth.address, 3, false); // Total pool multiplier = 5
+    await this.wrnRewardPool.addLockUpRewardPool(this.weth.address, 3, true); // Total pool multiplier = 5
 
     await this.wrnRewardPool.doLockUp(this.hunt.address, toBN(1), 3, { from: alice }); // 100% on HUNT pool, 0.5 * 2/5 = 0.2 -> HUNT pool
     await this.wrnRewardPool.doLockUp(this.weth.address, toBN(1), 3, { from: bob }); // 100% on WETH pool, 0.5 * 3/5 = 0.3 -> WRETH pool
@@ -158,6 +158,45 @@ contract('WRN Reward Pool Test', ([creator, alice, bob]) => {
 
     assert.equal((await this.wrnRewardPool.pendingWRN(this.hunt.address, { from: alice })).valueOf() / 1e18, 0.4);
     assert.equal((await this.wrnRewardPool.pendingWRN(this.weth.address, { from: bob })).valueOf() / 1e18, 0.3);
+  });
+
+  it('should fail on updating to a smaller multiplier without updating all pool', async () => {
+    await expectRevert(
+      this.wrnRewardPool.updatePoolMultiplier(this.hunt.address, 1, false),
+      'cannot update to a smaller value without updating all pools'
+    );
+  });
+
+  it('should update reward pool multiplier correctly', async () => {
+    this.weth = await ERC20Token.new({ from: creator });
+    this.weth.initialize('WETH', 'WETH', toBN(1000));
+    await this.weth.mint(bob, toBN(500), { from: creator });
+    await this.weth.approve(this.wrnRewardPool.address, toBN(500), { from: bob });
+
+    await this.wrnRewardPool.addLockUpRewardPool(this.weth.address, 3, true); // Total pool multiplier = 5
+
+    await this.wrnRewardPool.doLockUp(this.hunt.address, toBN(1), 3, { from: alice }); // 100% on HUNT pool, 0.5 * 2/5 = 0.2 -> HUNT pool
+    await this.wrnRewardPool.doLockUp(this.weth.address, toBN(1), 3, { from: bob }); // 100% on WETH pool, 0.5 * 3/5 = 0.3 -> WRETH pool
+    // Block 1 - alice: 0.2 / bob: 0
+
+    await time.advanceBlock();
+
+    // Block 2 - alice: 0.2 + 0.2 = 0.4 / bob: 0.3
+
+    await this.wrnRewardPool.updatePoolMultiplier(this.weth.address, 2, true);
+
+    // Block 3 - alice: 0.2 + 0.2 + 0.2 = 0.6 / bob: 0.3 + 0.3 = 0.6
+    // 0.5 * 2/4 = 0.25 -> HUNT Pool
+    // 0.5 * 2/4 = 0.25 -> WETH Pool
+
+    assert.equal((await this.wrnRewardPool.pendingWRN(this.hunt.address, { from: alice })).valueOf() / 1e18, 0.6);
+    assert.equal((await this.wrnRewardPool.pendingWRN(this.weth.address, { from: bob })).valueOf() / 1e18, 0.6);
+
+    await time.advanceBlock();
+
+    // Block 3 - alice: 0.2 + 0.2 + 0.2 + 0.25 = 0.85 / bob: 0.3 + 0.3 + 0.25 = 0.85
+    assert.equal((await this.wrnRewardPool.pendingWRN(this.hunt.address, { from: alice })).valueOf() / 1e18, 0.85);
+    assert.equal((await this.wrnRewardPool.pendingWRN(this.weth.address, { from: bob })).valueOf() / 1e18, 0.85);
   });
 
   it('adding a reward pool in the middle of other pools', async () => {

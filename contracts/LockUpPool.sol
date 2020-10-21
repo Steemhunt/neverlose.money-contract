@@ -15,8 +15,6 @@ contract LockUpPool is Initializable, OwnableUpgradeSafe {
   uint256 public PENALTY_RATE;
   uint256 public PLATFORM_FEE_RATE;
 
-  // TODO:
-  // - Add brokenAt
   struct LockUp {
     uint256 durationInMonths;
     uint256 unlockedAt;
@@ -91,24 +89,8 @@ contract LockUpPool is Initializable, OwnableUpgradeSafe {
     tokenStats[tokenAddress].poolExists = true;
   }
 
-  // function addressToString(address _addr) public pure returns(string memory) {
-  //   bytes32 value = bytes32(uint256(_addr));
-  //   bytes memory alphabet = "0123456789abcdef";
-
-  //   bytes memory str = new bytes(51);
-  //   str[0] = "0";
-  //   str[1] = "x";
-  //   for (uint i = 0; i < 20; i++) {
-  //       str[2+i*2] = alphabet[uint(uint8(value[i + 12] >> 4))];
-  //       str[3+i*2] = alphabet[uint(uint8(value[i + 12] & 0x0f))];
-  //   }
-  //   return string(str);
-  // }
-
-  // TODO: Test gas consumptuion without this validation
   modifier _checkPoolExists(address tokenAddress) {
     require(tokenStats[tokenAddress].poolExists, 'token pool does not exist');
-    // require(tokenStats[tokenAddress].poolExists, string(abi.encodePacked('token pool does not exist: ', addressToString(tokenAddress), ' - ', addressToString(msg.sender))));
     _;
   }
 
