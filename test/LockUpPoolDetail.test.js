@@ -3,7 +3,7 @@ const ERC20Token = artifacts.require('ERC20Token');
 const LockUpPool = artifacts.require('LockUpPool');
 const { toBN } = require('./helpers/NumberHelpers');
 
-contract('LockUp and Exit', ([creator, alice, bob]) => {
+contract('LockUp and Exit', ([creator, alice, bob, carol]) => {
   beforeEach(async () => {
     this.hunt = await ERC20Token.new({ from: creator });
     this.hunt.initialize('HuntToken', 'HUNT', toBN(10000));
@@ -193,5 +193,64 @@ contract('LockUp and Exit', ([creator, alice, bob]) => {
 
     await this.lockUpPool.exit(this.hunt.address, 1, true, { from: alice }); // Force Exit: withdraw: 0.87 + penalty: 0.1 + fee: 0.03
     assert.equal((await this.hunt.balanceOf(alice, { from: alice })).valueOf(), toBN(102987, 16)); // 1029 + 0.87
+  });
+
+  it('should calculate bonus correctly on multiple lock-ups', async () => {
+    await this.hunt.transfer(carol, toBN(2000), { from: creator });
+    // Balance - creator: 6000
+    await this.hunt.approve(this.lockUpPool.address, toBN(9999999999999), { from: carol });
+
+    await this.lockUpPool.doLockUp(this.hunt.address, toBN(1000), 3, { from: carol }); // 1000
+    await this.lockUpPool.doLockUp(this.hunt.address, toBN(1000), 6, { from: carol }); // 2000
+    await this.lockUpPool.doLockUp(this.hunt.address, toBN(100), 3, { from: alice }); // 100
+    await this.lockUpPool.doLockUp(this.hunt.address, toBN(100), 3, { from: bob }); // 100
+    await this.lockUpPool.doLockUp(this.hunt.address, toBN(200), 9, { from: alice }); // 600
+
+    // Total effective lockup: carol - 3000 / alice - 100 + 600 = 700 / bob - 100
+
+    await this.lockUpPool.exit(this.hunt.address, 0, true, { from: carol }); // Force Exit! - penalty: 100
+
+    // Earned: carol - 100 * 2000/2800 = 71.4285714286 / alice - 100 * 700/2800 = 25 / bob - 3.5714285714
+
+    assert.equal(((await this.lockUpPool.earnedBonus(this.hunt.address, { from: carol })).valueOf() / 1e18).toFixed(5), '71.42857');
+    assert.equal((await this.lockUpPool.earnedBonus(this.hunt.address, { from: alice })).valueOf() / 1e18, 25);
+    assert.equal(((await this.lockUpPool.earnedBonus(this.hunt.address, { from: bob })).valueOf() / 1e18).toFixed(5), '3.57143');
+
+    assert.equal((await this.hunt.balanceOf(creator)).valueOf(), toBN(6030)); // platform fee
+
+    await this.lockUpPool.exit(this.hunt.address, 1, true, { from: carol }); // Force Exit! - penalty: 100
+
+    // Earned: alice - 100 * 700/800 = 87.5 / bob - 12.5
+
+    assert.equal((await this.lockUpPool.earnedBonus(this.hunt.address, { from: carol })).valueOf() / 1e18, 0); // Should be claimed
+    assert.equal((await this.lockUpPool.earnedBonus(this.hunt.address, { from: alice })).valueOf() / 1e18, 112.5); // 25 + 87.5
+    assert.equal(((await this.lockUpPool.earnedBonus(this.hunt.address, { from: bob })).valueOf() / 1e18).toFixed(5), '16.07143'); // 3.5714285714 + 12.5
+
+    assert.equal((await this.hunt.balanceOf(creator)).valueOf(), toBN(6060)); // platform fee
+
+    assert.equal(((await this.hunt.balanceOf(carol)).valueOf() / 1e18).toFixed(5), '1811.42857'); // 2000 - 130 + 71.4285714286 - 130
+  });
+
+  it('should calculate bonus debt correctly on multiple lock-ups', async () => {
+    await this.lockUpPool.doLockUp(this.hunt.address, toBN(100), 3, { from: alice });
+    await this.lockUpPool.doLockUp(this.hunt.address, toBN(100), 3, { from: bob });
+    await this.lockUpPool.doLockUp(this.hunt.address, toBN(100), 3, { from: bob });
+
+    await this.lockUpPool.exit(this.hunt.address, 1, true, { from: bob }); // Force Exit! - penalty: 100
+
+    assert.equal((await this.lockUpPool.earnedBonus(this.hunt.address, { from: alice })).valueOf() / 1e18, 5);
+    assert.equal((await this.lockUpPool.earnedBonus(this.hunt.address, { from: bob })).valueOf() / 1e18, 5);
+
+    await this.lockUpPool.doLockUp(this.hunt.address, toBN(100), 3, { from: alice });
+
+    // Total effective lockup: alice - 200 / bob: 100
+
+    assert.equal((await this.lockUpPool.earnedBonus(this.hunt.address, { from: alice })).valueOf() / 1e18, 5);
+    assert.equal((await this.lockUpPool.earnedBonus(this.hunt.address, { from: bob })).valueOf() / 1e18, 5);
+
+    await this.lockUpPool.exit(this.hunt.address, 0, true, { from: bob }); // Force Exit! - penalty: 100
+
+    assert.equal((await this.lockUpPool.earnedBonus(this.hunt.address, { from: alice })).valueOf() / 1e18, 15);
+    assert.equal((await this.lockUpPool.earnedBonus(this.hunt.address, { from: bob })).valueOf() / 1e18, 0); // claimed
   });
 });

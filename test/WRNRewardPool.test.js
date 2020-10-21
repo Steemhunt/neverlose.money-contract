@@ -12,7 +12,7 @@ const {
   printLockUp,
 } = require('./helpers/LogHelpers.js');
 
-contract('WRN Reward Pool Test', ([creator, alice, bob, carol]) => {
+contract('WRN Reward Pool Test', ([creator, alice, bob]) => {
   beforeEach(async () => {
     this.hunt = await ERC20Token.new({ from: creator });
     this.hunt.initialize('HuntToken', 'HUNT', toBN(1000));
@@ -37,9 +37,6 @@ contract('WRN Reward Pool Test', ([creator, alice, bob, carol]) => {
 
     await this.hunt.mint(bob, toBN(500), { from: creator });
     await this.hunt.approve(this.wrnRewardPool.address, toBN(500), { from: bob });
-
-    await this.hunt.mint(carol, toBN(500), { from: creator });
-    await this.hunt.approve(this.wrnRewardPool.address, toBN(500), { from: carol });
   });
 
   it('should not update a non-existing pool info', async () => {
@@ -298,5 +295,32 @@ contract('WRN Reward Pool Test', ([creator, alice, bob, carol]) => {
     await this.wrnRewardPool.exit(this.hunt.address, 1, true, { from: alice }); // Exit & Claim
 
     assert.equal((await this.wrn.balanceOf(alice)).valueOf() / 1e18, 2.5); // 1.0 + 1.5
+  });
+
+  it('should calculate WRN reward correctly on multiple lock-ups', async () => {
+    await this.wrnRewardPool.doLockUp(this.hunt.address, toBN(100), 3, { from: alice }); // 100
+
+    // Block 0 - alice: 0.5
+
+    await this.wrnRewardPool.doLockUp(this.hunt.address, toBN(100), 3, { from: bob }); // 100
+
+    // Block 1 - alice: 0.75 / bob - 0.25
+
+    await this.wrnRewardPool.doLockUp(this.hunt.address, toBN(200), 9, { from: alice }); // 600
+
+    // Total effective lockup: alice - 100 + 600 = 700 / bob - 100
+    // Block 2 - alice: 0.75 + 0.5 * 700/800 = 1.1875 / bob: 0.25 + 0.5 * 100/800 = 0.3125
+
+    assert.equal((await this.wrnRewardPool.pendingWRN(this.hunt.address, { from: alice })).valueOf() / 1e18, 1.1875);
+    assert.equal((await this.wrnRewardPool.pendingWRN(this.hunt.address, { from: bob })).valueOf() / 1e18, 0.3125);
+
+    await this.wrnRewardPool.exit(this.hunt.address, 1, true, { from: alice }); // Exit & Claim
+
+    // Total effective lockup: alice - 100 / bob - 100
+    // Block 3 - alice: 0 / bob: 0.3125 + 0.5 = 0.8125
+
+    assert.equal((await this.wrnRewardPool.pendingWRN(this.hunt.address, { from: alice })).valueOf() / 1e18, 0);
+    assert.equal((await this.wrn.balanceOf(alice)).valueOf() / 1e18, 1.1875);
+    assert.equal((await this.wrnRewardPool.pendingWRN(this.hunt.address, { from: bob })).valueOf() / 1e18, 0.8125);
   });
 });

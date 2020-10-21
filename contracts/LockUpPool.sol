@@ -28,7 +28,7 @@ contract LockUpPool is Initializable, OwnableUpgradeSafe {
   struct UserLockUp {
     uint256 total;
     uint256 effectiveTotal;
-    uint256 bonusClaimed; // only for information
+    uint256 bonusClaimed; // only used for tracking
     uint256 bonusDebt;
     uint256 lockedUpCount;
     LockUp[] lockUps;
