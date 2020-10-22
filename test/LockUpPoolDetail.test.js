@@ -10,7 +10,7 @@ contract('LockUp and Exit', ([creator, alice, bob, carol]) => {
 
     this.lockUpPool = await LockUpPool.new({ from: creator });
     this.lockUpPool.initialize();
-    this.lockUpPool.addLockUpPool(this.hunt.address);
+    this.lockUpPool.addLockUpPool(this.hunt.address, toBN(9999999999999));
 
     await this.hunt.transfer(alice, toBN(1000), { from: creator });
     await this.hunt.transfer(bob, toBN(1000), { from: creator });
@@ -26,7 +26,7 @@ contract('LockUp and Exit', ([creator, alice, bob, carol]) => {
   it('initial values should be correct', async () => {
     this.wbtc = await ERC20Token.new({ from: creator });
     this.wbtc.initialize('Wrapped BTC', 'wBTC', toBN(10000));
-    this.lockUpPool.addLockUpPool(this.wbtc.address);
+    this.lockUpPool.addLockUpPool(this.wbtc.address, toBN(9999999999999));
 
     assert.equal((await this.hunt.balanceOf(creator, { from: creator })).valueOf(), toBN(8000));
   });

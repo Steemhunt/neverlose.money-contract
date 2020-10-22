@@ -63,7 +63,7 @@ contract WRNRewardPool is LockUpPool {
 
   // MARK: - Overiiding LockUpPool
 
-  function addLockUpRewardPool(address tokenAddress, uint256 multiplier, bool shouldUpdate) public onlyOwner {
+  function addLockUpRewardPool(address tokenAddress, uint256 multiplier, uint256 maxLockUpLimit, bool shouldUpdate) external onlyOwner {
     require(multiplier >= 1, 'multiplier must be greater than or equal to 1');
 
     if(shouldUpdate) {
@@ -78,7 +78,7 @@ contract WRNRewardPool is LockUpPool {
       updateAllPools();
     }
 
-    addLockUpPool(tokenAddress);
+    addLockUpPool(tokenAddress, maxLockUpLimit);
 
     wrnStats[tokenAddress].multiplier = multiplier;
     totalMultiplier = totalMultiplier.add(multiplier);
@@ -86,7 +86,7 @@ contract WRNRewardPool is LockUpPool {
     emit PoolAdded(tokenAddress, multiplier);
   }
 
-  function updatePoolMultiplier(address tokenAddress, uint256 multiplier, bool shouldUpdate) public onlyOwner {
+  function updatePoolMultiplier(address tokenAddress, uint256 multiplier, bool shouldUpdate) external onlyOwner {
     require(multiplier >= 1, 'multiplier must be greater than or equal to 1');
 
     if(shouldUpdate) {
@@ -130,7 +130,7 @@ contract WRNRewardPool is LockUpPool {
   }
 
   // Return WRN per block over the given from to to block.
-  function getWRNPerBlock(uint256 from, uint256 to) private view returns (uint256) {
+  function _getWRNPerBlock(uint256 from, uint256 to) private view returns (uint256) {
     if (from > REWARD_END_BLOCK) { // Reward pool finished
       return 0;
     } else if (to >= REWARD_END_BLOCK) { // Partial finished
@@ -180,7 +180,7 @@ contract WRNRewardPool is LockUpPool {
   function _getAccWRNTillNow(address tokenAddress) private view returns (uint256) {
     WRNStats storage wrnStat = wrnStats[tokenAddress];
 
-    return getWRNPerBlock(wrnStat.lastRewardBlock, block.number)
+    return _getWRNPerBlock(wrnStat.lastRewardBlock, block.number)
       .mul(wrnStat.multiplier)
       .div(totalMultiplier);
   }
@@ -223,7 +223,9 @@ contract WRNRewardPool is LockUpPool {
     emit WRNClaimed(tokenAddress, msg.sender, amount);
   }
 
-  function dev(address _devAddress) public onlyOwner {
+  function setDevAddress(address _devAddress) external onlyOwner {
     devAddress = _devAddress;
   }
+
+  // MARK: - Utility view functions
 }

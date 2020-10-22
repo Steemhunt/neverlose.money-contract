@@ -1,16 +1,17 @@
 const ERC20Token = artifacts.require('ERC20Token');
 const LockUpPool = artifacts.require('LockUpPool');
 const { expectRevert } = require('@openzeppelin/test-helpers');
+const { toBN } = require('./helpers/NumberHelpers');
 
-contract('Basic contract functionality', ([creator]) => {
+contract('Basic contract functionality', ([creator, alice]) => {
   beforeEach(async () => {
     this.hunt = await ERC20Token.new({ from: creator });
-    this.hunt.initialize('HuntToken', 'HUNT', 10000);
+    await this.hunt.initialize('HuntToken', 'HUNT', 10000);
 
     this.lockUpPool = await LockUpPool.new({ from: creator });
-    this.lockUpPool.initialize();
+    await this.lockUpPool.initialize();
 
-    this.lockUpPool.addLockUpPool(this.hunt.address);
+    await this.lockUpPool.addLockUpPool(this.hunt.address, toBN(9999999999999));
   });
 
   it('balance of creator should have initial supply', async () => {
@@ -145,6 +146,57 @@ contract('Basic contract functionality', ([creator]) => {
     );
 
     assert.equal((await this.hunt.balanceOf(creator, { from: creator })).valueOf(), 10000);
+  });
+
+  it('owner should be able to add a pool', async () => {
+    this.wbtc = await ERC20Token.new({ from: creator });
+    await this.wbtc.initialize('Wrapped BTC', 'wBTC', 10000);
+    await this.lockUpPool.addLockUpPool(this.wbtc.address, toBN(123));
+
+    const [maxLockUpLimit, totalLockUp] = Object.values(await this.lockUpPool.tokenStats(this.wbtc.address, { from: creator }));
+
+    assert.equal(maxLockUpLimit / 1e18, 123);
+    assert.equal(totalLockUp, 0);
+  });
+
+  it('non-owner should not be able to add a pool', async () => {
+    this.wbtc = await ERC20Token.new({ from: creator });
+    await this.wbtc.initialize('Wrapped BTC', 'wBTC', 10000);
+
+    await expectRevert(
+      this.lockUpPool.addLockUpPool(this.wbtc.address, toBN(123), { from: alice}),
+      'Ownable: caller is not the owner.'
+    );
+  });
+
+  it('owner should be able to update max limit', async () => {
+    await this.lockUpPool.updateMaxLimit(this.hunt.address, toBN(456));
+    const [maxLockUpLimit] = Object.values(await this.lockUpPool.tokenStats(this.hunt.address, { from: creator }));
+    assert.equal(maxLockUpLimit / 1e18, 456);
+  });
+
+  it('non-owner should not be able to update max limit', async () => {
+    this.wbtc = await ERC20Token.new({ from: creator });
+    await this.wbtc.initialize('Wrapped BTC', 'wBTC', 10000);
+
+    await expectRevert(
+      this.lockUpPool.updateMaxLimit(this.hunt.address, toBN(456), { from: alice }),
+      'Ownable: caller is not the owner.'
+    );
+  });
+
+  it('should not allow lock-up more than the max limit', async () => {
+    await this.hunt.approve(this.lockUpPool.address, 1000);
+
+    await this.lockUpPool.updateMaxLimit(this.hunt.address, 100);
+    await this.lockUpPool.doLockUp(this.hunt.address, 100, 3);
+    const [amount] = Object.values(await this.lockUpPool.userLockUps(this.hunt.address, creator));
+    assert.equal(amount, 100);
+
+    await expectRevert(
+      this.lockUpPool.doLockUp(this.hunt.address, 1, 3),
+      'max limit exceeded for this pool'
+    );
   });
 });
 

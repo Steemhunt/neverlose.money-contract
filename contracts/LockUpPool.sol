@@ -33,7 +33,7 @@ contract LockUpPool is Initializable, OwnableUpgradeSafe {
   }
 
   struct TokenStats {
-    bool poolExists;
+    uint256 maxLockUpLimit;
     uint256 totalLockUp;
     uint256 effectiveTotalLockUp; // sum(amount * durationBoost)
     uint256 totalPenalty;
@@ -80,18 +80,22 @@ contract LockUpPool is Initializable, OwnableUpgradeSafe {
     PLATFORM_FEE_RATE = 3;
   }
 
-  // Should be called on WRNRewardPool#addLockUpRewardPool
-  function addLockUpPool(address tokenAddress) public onlyOwner {
-    require(tokenAddress.isContract(), 'tokeanAddress is not a contract');
-    require(!tokenStats[tokenAddress].poolExists, 'pool already exists');
-
-    pools.push(tokenAddress);
-    tokenStats[tokenAddress].poolExists = true;
+  modifier _checkPoolExists(address tokenAddress) {
+    require(tokenStats[tokenAddress].maxLockUpLimit > 0, 'token pool does not exist');
+    _;
   }
 
-  modifier _checkPoolExists(address tokenAddress) {
-    require(tokenStats[tokenAddress].poolExists, 'token pool does not exist');
-    _;
+  // Should be called on WRNRewardPool#addLockUpRewardPool
+  function addLockUpPool(address tokenAddress, uint256 maxLockUpLimit) public onlyOwner {
+    require(tokenAddress.isContract(), 'tokeanAddress is not a contract');
+    require(tokenStats[tokenAddress].maxLockUpLimit == 0, 'pool already exists');
+
+    pools.push(tokenAddress);
+    tokenStats[tokenAddress].maxLockUpLimit = maxLockUpLimit;
+  }
+
+  function updateMaxLimit(address tokenAddress, uint256 maxLockUpLimit) external onlyOwner _checkPoolExists(tokenAddress) {
+    tokenStats[tokenAddress].maxLockUpLimit = maxLockUpLimit;
   }
 
   function _durationBoost(uint256 durationInMonths) private pure returns (uint256) {
@@ -106,12 +110,20 @@ contract LockUpPool is Initializable, OwnableUpgradeSafe {
   function doLockUp(address tokenAddress, uint256 amount, uint256 durationInMonths) public virtual _checkPoolExists(tokenAddress) {
     require(amount > 0, 'lock up amount must be greater than 0');
     // require(durationInMonths >= 3, 'duration must be greater than or equal to 3'); // TEST
-    require(durationInMonths <= 120, 'duration must be less than or equal to 120');
+    require(durationInMonths <= 120 && durationInMonths > 0, 'duration must be positive and less than or equal to 120');
 
     IERC20 token = IERC20(tokenAddress);
 
     require(token.balanceOf(msg.sender) >= amount, 'not enough balance');
     require(token.allowance(msg.sender, address(this)) >= amount, 'not enough allowance');
+
+    UserLockUp storage userLockUp = userLockUps[tokenAddress][msg.sender];
+    TokenStats storage tokenStat = tokenStats[tokenAddress];
+
+    // Max lock-up amount is restricted during the beta period
+    if (tokenStat.maxLockUpLimit < userLockUp.total.add(amount)) {
+      revert('max limit exceeded for this pool');
+    }
 
     // Should claim bonus before exit, otherwise `earnedBonus` will become zero afterwards
     claimBonus(tokenAddress);
@@ -120,7 +132,6 @@ contract LockUpPool is Initializable, OwnableUpgradeSafe {
 
     // Add LockUp
     uint256 effectiveAmount = amount.mul(_durationBoost(durationInMonths));
-    UserLockUp storage userLockUp = userLockUps[tokenAddress][msg.sender];
     userLockUp.lockUps.push(
       LockUp(
         durationInMonths,
@@ -137,7 +148,6 @@ contract LockUpPool is Initializable, OwnableUpgradeSafe {
     userLockUp.lockedUpCount = userLockUp.lockedUpCount.add(1);
 
     // Update TokenStats
-    TokenStats storage tokenStat = tokenStats[tokenAddress];
     tokenStat.totalLockUp = tokenStat.totalLockUp.add(amount);
     tokenStat.effectiveTotalLockUp = tokenStat.effectiveTotalLockUp.add(effectiveAmount);
 
@@ -150,23 +160,6 @@ contract LockUpPool is Initializable, OwnableUpgradeSafe {
   function _updateBonusDebt(address tokenAddress, address account) private {
     userLockUps[tokenAddress][account].bonusDebt = tokenStats[tokenAddress].accBonusPerShare
       .mul(userLockUps[tokenAddress][account].effectiveTotal).div(1e18);
-  }
-
-  function getLockUp(address tokenAddress, address account, uint256 lockUpId) public view returns (uint256, uint256, uint256, uint256) {
-    LockUp storage lockUp = userLockUps[tokenAddress][account].lockUps[lockUpId];
-
-    return (
-      lockUp.durationInMonths,
-      lockUp.unlockedAt,
-      lockUp.amount,
-      lockUp.effectiveAmount
-    );
-  }
-
-  function lockedUpAt(address tokenAddress, address account, uint256 lockUpId) public view returns (uint256) {
-    LockUp storage lockUp = userLockUps[tokenAddress][account].lockUps[lockUpId];
-
-    return lockUp.unlockedAt.sub(lockUp.durationInMonths.mul(2592000));
   }
 
   function exit(address tokenAddress, uint256 lockUpId, bool force) public virtual _checkPoolExists(tokenAddress) {
@@ -234,10 +227,6 @@ contract LockUpPool is Initializable, OwnableUpgradeSafe {
       .sub(userLockUp.bonusDebt); // The accumulated amount before I join the pool
   }
 
-  function totalClaimableBonus(address tokenAddress) external view returns (uint256) {
-    return tokenStats[tokenAddress].totalPenalty.sub(tokenStats[tokenAddress].totalClaimed);
-  }
-
   function claimBonus(address tokenAddress) public _checkPoolExists(tokenAddress) {
     uint256 amount = earnedBonus(tokenAddress);
 
@@ -258,5 +247,32 @@ contract LockUpPool is Initializable, OwnableUpgradeSafe {
     IERC20(tokenAddress).safeTransfer(msg.sender, amount);
 
     emit BonusClaimed(tokenAddress, msg.sender, amount);
+  }
+
+  // MARK: - Utility view functions
+
+  function totalClaimableBonus(address tokenAddress) external view returns (uint256) {
+    return tokenStats[tokenAddress].totalPenalty.sub(tokenStats[tokenAddress].totalClaimed);
+  }
+
+  function poolCount() external view returns(uint256) {
+    return pools.length;
+  }
+
+  function getLockUp(address tokenAddress, address account, uint256 lockUpId) external view returns (uint256, uint256, uint256, uint256) {
+    LockUp storage lockUp = userLockUps[tokenAddress][account].lockUps[lockUpId];
+
+    return (
+      lockUp.durationInMonths,
+      lockUp.unlockedAt,
+      lockUp.amount,
+      lockUp.effectiveAmount
+    );
+  }
+
+  function lockedUpAt(address tokenAddress, address account, uint256 lockUpId) external view returns (uint256) {
+    LockUp storage lockUp = userLockUps[tokenAddress][account].lockUps[lockUpId];
+
+    return lockUp.unlockedAt.sub(lockUp.durationInMonths.mul(2592000));
   }
 }

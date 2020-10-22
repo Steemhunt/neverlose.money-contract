@@ -27,7 +27,7 @@ contract('WRN Reward Pool Test', ([creator, alice, bob]) => {
     await this.wrn.addMinter(this.wrnRewardPool.address, { from: creator });
 
     // Add HUNT pool
-    await this.wrnRewardPool.addLockUpRewardPool(this.hunt.address, 2, false);
+    await this.wrnRewardPool.addLockUpRewardPool(this.hunt.address, 2, toBN(9999999999999), false);
 
     await this.hunt.approve(this.wrnRewardPool.address, toBN(1000), { from: creator });
 
@@ -58,7 +58,7 @@ contract('WRN Reward Pool Test', ([creator, alice, bob]) => {
 
     this.eth = await ERC20Token.new({ from: creator });
     this.eth.initialize('Ethereum', 'ETH', toBN(1000));
-    await this.wrnRewardPool.addLockUpRewardPool(this.eth.address, 1, false);
+    await this.wrnRewardPool.addLockUpRewardPool(this.eth.address, 1, toBN(9999999999999), false);
 
     assert.equal((await this.wrnRewardPool.totalMultiplier()).valueOf(), 3);
   });
@@ -139,7 +139,7 @@ contract('WRN Reward Pool Test', ([creator, alice, bob]) => {
     await this.weth.mint(bob, toBN(500), { from: creator });
     await this.weth.approve(this.wrnRewardPool.address, toBN(500), { from: bob });
 
-    await this.wrnRewardPool.addLockUpRewardPool(this.weth.address, 3, true); // Total pool multiplier = 5
+    await this.wrnRewardPool.addLockUpRewardPool(this.weth.address, 3, toBN(9999999999999), true); // Total pool multiplier = 5
 
     await this.wrnRewardPool.doLockUp(this.hunt.address, toBN(1), 3, { from: alice }); // 100% on HUNT pool, 0.5 * 2/5 = 0.2 -> HUNT pool
     await this.wrnRewardPool.doLockUp(this.weth.address, toBN(1), 3, { from: bob }); // 100% on WETH pool, 0.5 * 3/5 = 0.3 -> WRETH pool
@@ -173,7 +173,7 @@ contract('WRN Reward Pool Test', ([creator, alice, bob]) => {
     await this.weth.mint(bob, toBN(500), { from: creator });
     await this.weth.approve(this.wrnRewardPool.address, toBN(500), { from: bob });
 
-    await this.wrnRewardPool.addLockUpRewardPool(this.weth.address, 3, true); // Total pool multiplier = 5
+    await this.wrnRewardPool.addLockUpRewardPool(this.weth.address, 3, toBN(9999999999999), true); // Total pool multiplier = 5
 
     await this.wrnRewardPool.doLockUp(this.hunt.address, toBN(1), 3, { from: alice }); // 100% on HUNT pool, 0.5 * 2/5 = 0.2 -> HUNT pool
     await this.wrnRewardPool.doLockUp(this.weth.address, toBN(1), 3, { from: bob }); // 100% on WETH pool, 0.5 * 3/5 = 0.3 -> WRETH pool
@@ -207,7 +207,7 @@ contract('WRN Reward Pool Test', ([creator, alice, bob]) => {
 
     await this.wrnRewardPool.doLockUp(this.hunt.address, toBN(1), 3, { from: alice }); // 100% on HUNT pool
     // Block 0 - alice: 0
-    await this.wrnRewardPool.addLockUpRewardPool(this.weth.address, 3, true); // Total pool multiplier = 5
+    await this.wrnRewardPool.addLockUpRewardPool(this.weth.address, 3, toBN(9999999999999), true); // Total pool multiplier = 5
     // Block 1 - alice: 0.5
 
     // assert.equal((await this.wrn.totalSupply()).valueOf() / 1e18, 0.5 + 0.5/9);
@@ -230,7 +230,7 @@ contract('WRN Reward Pool Test', ([creator, alice, bob]) => {
 
     await this.wrnRewardPool.doLockUp(this.hunt.address, toBN(1), 3, { from: alice }); // 100% on HUNT pool
     // Block 0 - alice: 0
-    await this.wrnRewardPool.addLockUpRewardPool(this.weth.address, 3, true); // Total pool multiplier becomes 5, but `accWRNPerShare` is not updated
+    await this.wrnRewardPool.addLockUpRewardPool(this.weth.address, 3, toBN(9999999999999), true); // Total pool multiplier becomes 5, but `accWRNPerShare` is not updated
     // Block 1 - alice: 0.5
 
     assert.equal((await this.wrnRewardPool.pendingWRN(this.hunt.address, { from: alice })).valueOf() / 1e18, 0.5);
@@ -252,7 +252,7 @@ contract('WRN Reward Pool Test', ([creator, alice, bob]) => {
 
     await this.wrnRewardPool.doLockUp(this.hunt.address, toBN(1), 3, { from: alice }); // 100% on HUNT pool
     // Block 0 - alice: 0
-    await this.wrnRewardPool.addLockUpRewardPool(this.weth.address, 3, false); // Total pool multiplier becomes 5, but `accWRNPerShare` is not updated
+    await this.wrnRewardPool.addLockUpRewardPool(this.weth.address, 3, toBN(9999999999999), false); // Total pool multiplier becomes 5, but `accWRNPerShare` is not updated
     // Block 1 - alice: 0.5
 
     await time.advanceBlock();

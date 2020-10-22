@@ -28,9 +28,9 @@ module.exports = async function (deployer, network, [creator]) {
 
     await wrnToken.addMinter(wrnRewardPool.address, { from: creator });
 
-    await wrnRewardPool.addLockUpRewardPool(hunt.address, 2, false);
-    await wrnRewardPool.addLockUpRewardPool(weth.address, 1, false);
-    await wrnRewardPool.addLockUpRewardPool(wbtc.address, 1, false);
+    await wrnRewardPool.addLockUpRewardPool(hunt.address, 2, toBN(9999999999999), false);
+    await wrnRewardPool.addLockUpRewardPool(weth.address, 1, toBN(9999999999999), false);
+    await wrnRewardPool.addLockUpRewardPool(wbtc.address, 1, toBN(9999999999999), false);
 
     console.log(`WRN: ${wrnToken.address} / WRNRewardPool: ${wrnRewardPool.address}`);
     console.log(` - HUNT: ${hunt.address}\n - WETH: ${weth.address}\n - WBTC: ${wbtc.address}`);
