@@ -1,10 +1,8 @@
 # Neverlose.money - Gamified HODL Protocol
 A lock-up smart contract HODL protocol on Ethereum that pays bonus to the winners with the losers penalty.
 
-```
-"If you aren’t willing to own a stock for ten years, don’t even think about owning it for ten minutes."
-- Warren Buffet -
-```
+> "If you aren’t willing to own a stock for ten years, don’t even think about owning it for ten minutes."\
+>\- Warren Buffet -
 
 ![](https://rukminim1.flixcart.com/image/832/832/j6v2ky80/poster/s/r/h/small-warren-buffett-motivational-quotes-value-investing-rule-no-original-imaex8tz68kyz2hf.jpeg)
 Source: https://youtu.be/vCpT-UmVf3g
