@@ -109,8 +109,7 @@ contract LockUpPool is Initializable, OwnableUpgradeSafe {
 
   function doLockUp(address tokenAddress, uint256 amount, uint256 durationInMonths) public virtual _checkPoolExists(tokenAddress) {
     require(amount > 0, 'lock up amount must be greater than 0');
-    // require(durationInMonths >= 3, 'duration must be greater than or equal to 3'); // TEST
-    require(durationInMonths <= 120 && durationInMonths > 0, 'duration must be positive and less than or equal to 120');
+    require(durationInMonths >= 3 && durationInMonths <= 120, 'duration must be between 3 and 120 inclusive');
 
     IERC20 token = IERC20(tokenAddress);
 

@@ -1,6 +1,6 @@
 const ERC20Token = artifacts.require('ERC20Token');
 const LockUpPool = artifacts.require('LockUpPool');
-const { expectRevert } = require('@openzeppelin/test-helpers');
+const { expectRevert, time } = require('@openzeppelin/test-helpers');
 const { toBN } = require('./helpers/NumberHelpers');
 
 contract('Basic contract functionality', ([creator, alice]) => {
@@ -64,16 +64,6 @@ contract('Basic contract functionality', ([creator, alice]) => {
     assert.equal(effectiveTotalLockUp.valueOf(), 3000);
   });
 
-  it('calculates duration boost properly < 3 months', async () => {
-    await this.hunt.approve(this.lockUpPool.address, 1000, { from: creator });
-    await this.lockUpPool.doLockUp(this.hunt.address, 1000, 1, { from: creator });
-
-    // My lockUp stats
-    const [amount, effectiveAmount,,,] = Object.values(await this.lockUpPool.userLockUps(this.hunt.address, creator, { from: creator }));
-    assert.equal(amount.valueOf(), 1000);
-    assert.equal(effectiveAmount.valueOf(), 0);
-  });
-
   it('calculates duration boost properly = 3 months', async () => {
     await this.hunt.approve(this.lockUpPool.address, 1000, { from: creator });
     await this.lockUpPool.doLockUp(this.hunt.address, 1000, 3, { from: creator });
@@ -97,7 +87,12 @@ contract('Basic contract functionality', ([creator, alice]) => {
 
     await expectRevert(
       this.lockUpPool.doLockUp(this.hunt.address, 1000, 121, { from: creator }),
-      'duration must be less than or equal to 120'
+      'duration must be between 3 and 120 inclusive'
+    );
+
+    await expectRevert(
+      this.lockUpPool.doLockUp(this.hunt.address, 1000, 2, { from: creator }),
+      'duration must be between 3 and 120 inclusive'
     );
   });
 
@@ -110,9 +105,12 @@ contract('Basic contract functionality', ([creator, alice]) => {
     assert.equal(effectiveAmount.valueOf(), 5000);
   });
 
-  it('exit after lock up period is finished', async () => {
+  it('should calculate lock-up amount properly on matured lock-ups', async () => {
     await this.hunt.approve(this.lockUpPool.address, 1000, { from: creator });
-    await this.lockUpPool.doLockUp(this.hunt.address, 1000, 0, { from: creator });
+    await this.lockUpPool.doLockUp(this.hunt.address, 1000, 3, { from: creator });
+
+    await time.increase(86400*30*4);
+
     await this.lockUpPool.exit(this.hunt.address, 0, false, { from: creator });
 
     // My lockUp stats
@@ -128,7 +126,8 @@ contract('Basic contract functionality', ([creator, alice]) => {
 
   it('should not cut any fee on matured lockup', async () => {
     await this.hunt.approve(this.lockUpPool.address, 10000, { from: creator });
-    await this.lockUpPool.doLockUp(this.hunt.address, 10000, 0, { from: creator });
+    await this.lockUpPool.doLockUp(this.hunt.address, 10000, 3, { from: creator });
+    await time.increase(86400*30*4);
     await this.lockUpPool.exit(this.hunt.address, 0, false, { from: creator });
 
     // LockUp pool test again
@@ -137,7 +136,7 @@ contract('Basic contract functionality', ([creator, alice]) => {
 
   it('should handle double-exits properly', async () => {
     await this.hunt.approve(this.lockUpPool.address, 10000, { from: creator });
-    await this.lockUpPool.doLockUp(this.hunt.address, 10000, 0, { from: creator });
+    await this.lockUpPool.doLockUp(this.hunt.address, 10000, 3, { from: creator });
     await this.lockUpPool.exit(this.hunt.address, 0, false, { from: creator });
 
     await expectRevert(
