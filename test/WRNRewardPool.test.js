@@ -39,6 +39,15 @@ contract('WRN Reward Pool Test', ([creator, alice, bob]) => {
     await this.hunt.approve(this.wrnRewardPool.address, toBN(500), { from: bob });
   });
 
+  // double check for LockUpPool
+  it('lock-up function should be paused during emergency mode', async () => {
+    await this.wrnRewardPool.setEmergencyMode(true);
+    await expectRevert(
+      this.wrnRewardPool.doLockUp(this.hunt.address, 1000, 3),
+      'not allowed during emergency mode is on'
+    );
+  });
+
   it('should not update a non-existing pool info', async () => {
     this.eth = await ERC20Token.new({ from: creator });
     this.eth.initialize('Ethereum', 'ETH', toBN(1000));

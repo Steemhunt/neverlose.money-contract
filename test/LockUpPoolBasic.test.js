@@ -169,20 +169,18 @@ contract('Basic contract functionality', ([creator, alice]) => {
     );
   });
 
-  it('owner should be able to update max limit', async () => {
+  it('only owner should be able to update max limit', async () => {
     await this.lockUpPool.updateMaxLimit(this.hunt.address, toBN(456));
-    const [maxLockUpLimit] = Object.values(await this.lockUpPool.tokenStats(this.hunt.address, { from: creator }));
+    const [maxLockUpLimit] = Object.values(await this.lockUpPool.tokenStats(this.hunt.address));
     assert.equal(maxLockUpLimit / 1e18, 456);
-  });
-
-  it('non-owner should not be able to update max limit', async () => {
-    this.wbtc = await ERC20Token.new({ from: creator });
-    await this.wbtc.initialize('Wrapped BTC', 'wBTC', 10000);
 
     await expectRevert(
-      this.lockUpPool.updateMaxLimit(this.hunt.address, toBN(456), { from: alice }),
+      this.lockUpPool.updateMaxLimit(this.hunt.address, toBN(789), { from: alice }),
       'Ownable: caller is not the owner.'
     );
+
+    const [maxLockUpLimit2] = Object.values(await this.lockUpPool.tokenStats(this.hunt.address));
+    assert.equal(maxLockUpLimit2 / 1e18, 456);
   });
 
   it('should not allow lock-up more than the max limit', async () => {
@@ -196,6 +194,52 @@ contract('Basic contract functionality', ([creator, alice]) => {
     await expectRevert(
       this.lockUpPool.doLockUp(this.hunt.address, 1, 3),
       'max limit exceeded for this pool'
+    );
+  });
+
+  it('only owner should be able to change emergency mode', async () => {
+    assert.equal((await this.lockUpPool.emergencyMode()).valueOf(), false);
+    await this.lockUpPool.setEmergencyMode(true, { from: creator });
+    assert.equal((await this.lockUpPool.emergencyMode()).valueOf(), true);
+
+    await expectRevert(
+      this.lockUpPool.setEmergencyMode(false, { from: alice }),
+      'Ownable: caller is not the owner.'
+    );
+    assert.equal((await this.lockUpPool.emergencyMode()).valueOf(), true);
+  });
+
+  it('lock-up function should be paused during emergency mode', async () => {
+    await this.lockUpPool.setEmergencyMode(true);
+    await expectRevert(
+      this.lockUpPool.doLockUp(this.hunt.address, 1000, 3),
+      'not allowed during emergency mode is on'
+    );
+  });
+
+  it('exit function should be paused during emergency mode', async () => {
+    await this.hunt.approve(this.lockUpPool.address, 10000);
+    await this.lockUpPool.doLockUp(this.hunt.address, 1000, 3);
+    await this.lockUpPool.setEmergencyMode(true);
+    await expectRevert(
+      this.lockUpPool.exit(this.hunt.address, 0, true),
+      'not allowed during emergency mode is on'
+    );
+  });
+
+  it('claim function should be paused during emergency mode', async () => {
+    await this.hunt.approve(this.lockUpPool.address, 1000, { from: creator });
+    await this.hunt.transfer(alice, 1000, { from: creator });
+    await this.hunt.approve(this.lockUpPool.address, 1000, { from: alice });
+
+    await this.lockUpPool.doLockUp(this.hunt.address, 1000, 3, { from: creator });
+    await this.lockUpPool.doLockUp(this.hunt.address, 1000, 3, { from: alice });
+    await this.lockUpPool.exit(this.hunt.address, 0, true, { from: alice });
+
+    await this.lockUpPool.setEmergencyMode(true);
+    await expectRevert(
+      this.lockUpPool.exit(this.hunt.address, 0, true, { from: creator }),
+      'not allowed during emergency mode is on'
     );
   });
 });

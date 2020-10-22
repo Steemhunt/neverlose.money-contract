@@ -14,6 +14,7 @@ contract LockUpPool is Initializable, OwnableUpgradeSafe {
 
   uint256 public PENALTY_RATE;
   uint256 public PLATFORM_FEE_RATE;
+  bool public emergencyMode;
 
   struct LockUp {
     uint256 durationInMonths;
@@ -42,6 +43,19 @@ contract LockUpPool is Initializable, OwnableUpgradeSafe {
     uint256 accBonusPerShare; // Others' Penalty = My Bonus
   }
 
+  // Token => TokenStats
+  mapping (address => TokenStats) public tokenStats;
+
+  // Array of all added tokens
+  address[] public pools;
+
+  // Token => Account => UserLockUps
+  mapping (address => mapping (address => UserLockUp)) public userLockUps;
+
+  event LockedUp(address indexed token, address indexed account, uint256 amount, uint256 totalLockUp);
+  event Exited(address indexed token, address indexed account, uint256 amount, uint256 refundAmount, uint256 penalty, uint256 fee, uint256 remainingTotal);
+  event BonusClaimed(address indexed token, address indexed account, uint256 amount);
+
   // Fancy math here:
   //   - userLockUp.bonusDebt: Amount that should be deducted (the amount accumulated before I join the pool)
   //   - tokenStat.accBonusPerShare: Accumulated bonus per share of current total pool size
@@ -60,19 +74,6 @@ contract LockUpPool is Initializable, OwnableUpgradeSafe {
   // Whenever a user `add a lock-up` (set the amount accumulated before I join the pool):
   //   => userLockUp.bonusDebt = tokenStat.accBonusPerShare * effectiveAmount)
 
-  // Token => TokenStats
-  mapping (address => TokenStats) public tokenStats;
-
-  // Array of all added tokens
-  address[] public pools;
-
-  // Token => Account => UserLockUps
-  mapping (address => mapping (address => UserLockUp)) public userLockUps;
-
-  event LockedUp(address indexed token, address indexed account, uint256 amount, uint256 totalLockUp);
-  event Exited(address indexed token, address indexed account, uint256 amount, uint256 refundAmount, uint256 penalty, uint256 fee, uint256 remainingTotal);
-  event BonusClaimed(address indexed token, address indexed account, uint256 amount);
-
   function initialize() public initializer {
     OwnableUpgradeSafe.__Ownable_init();
 
@@ -82,6 +83,11 @@ contract LockUpPool is Initializable, OwnableUpgradeSafe {
 
   modifier _checkPoolExists(address tokenAddress) {
     require(tokenStats[tokenAddress].maxLockUpLimit > 0, 'token pool does not exist');
+    _;
+  }
+
+  modifier _checkEmergencyMode() {
+    require(!emergencyMode, 'not allowed during emergency mode is on');
     _;
   }
 
@@ -98,6 +104,10 @@ contract LockUpPool is Initializable, OwnableUpgradeSafe {
     tokenStats[tokenAddress].maxLockUpLimit = maxLockUpLimit;
   }
 
+  function setEmergencyMode(bool mode) external onlyOwner {
+    emergencyMode = mode;
+  }
+
   function _durationBoost(uint256 durationInMonths) private pure returns (uint256) {
     // 3 months = 1x, 6 months = 2x ... 1 year = 4x ... 10 years = 40x
     uint256 durationBoost = durationInMonths.div(3);
@@ -107,7 +117,7 @@ contract LockUpPool is Initializable, OwnableUpgradeSafe {
     return durationBoost;
   }
 
-  function doLockUp(address tokenAddress, uint256 amount, uint256 durationInMonths) public virtual _checkPoolExists(tokenAddress) {
+  function doLockUp(address tokenAddress, uint256 amount, uint256 durationInMonths) public virtual _checkPoolExists(tokenAddress) _checkEmergencyMode {
     require(amount > 0, 'lock up amount must be greater than 0');
     require(durationInMonths >= 3 && durationInMonths <= 120, 'duration must be between 3 and 120 inclusive');
 
@@ -161,7 +171,7 @@ contract LockUpPool is Initializable, OwnableUpgradeSafe {
       .mul(userLockUps[tokenAddress][account].effectiveTotal).div(1e18);
   }
 
-  function exit(address tokenAddress, uint256 lockUpId, bool force) public virtual _checkPoolExists(tokenAddress) {
+  function exit(address tokenAddress, uint256 lockUpId, bool force) public virtual _checkPoolExists(tokenAddress) _checkEmergencyMode {
     UserLockUp storage userLockUp = userLockUps[tokenAddress][msg.sender];
     LockUp storage lockUp = userLockUp.lockUps[lockUpId];
 
@@ -226,7 +236,7 @@ contract LockUpPool is Initializable, OwnableUpgradeSafe {
       .sub(userLockUp.bonusDebt); // The accumulated amount before I join the pool
   }
 
-  function claimBonus(address tokenAddress) public _checkPoolExists(tokenAddress) {
+  function claimBonus(address tokenAddress) public _checkPoolExists(tokenAddress) _checkEmergencyMode {
     uint256 amount = earnedBonus(tokenAddress);
 
     if (amount == 0) {
