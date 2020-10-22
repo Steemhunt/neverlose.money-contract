@@ -137,10 +137,10 @@ contract('Basic contract functionality', ([creator, alice]) => {
   it('should handle double-exits properly', async () => {
     await this.hunt.approve(this.lockUpPool.address, 10000, { from: creator });
     await this.lockUpPool.doLockUp(this.hunt.address, 10000, 3, { from: creator });
-    await this.lockUpPool.exit(this.hunt.address, 0, false, { from: creator });
+    await this.lockUpPool.exit(this.hunt.address, 0, true, { from: creator });
 
     await expectRevert(
-      this.lockUpPool.exit(this.hunt.address, 0, false, { from: creator }),
+      this.lockUpPool.exit(this.hunt.address, 0, true, { from: creator }),
       'already exited'
     );
 
