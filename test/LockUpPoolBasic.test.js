@@ -109,7 +109,7 @@ contract('Basic contract functionality', ([creator, alice]) => {
     await this.hunt.approve(this.lockUpPool.address, 1000, { from: creator });
     await this.lockUpPool.doLockUp(this.hunt.address, 1000, 3, { from: creator });
 
-    await time.increase(86400*30*4);
+    await time.increase(86400 * 30 * 4);
 
     await this.lockUpPool.exit(this.hunt.address, 0, false, { from: creator });
 
@@ -127,7 +127,7 @@ contract('Basic contract functionality', ([creator, alice]) => {
   it('should not cut any fee on matured lockup', async () => {
     await this.hunt.approve(this.lockUpPool.address, 10000, { from: creator });
     await this.lockUpPool.doLockUp(this.hunt.address, 10000, 3, { from: creator });
-    await time.increase(86400*30*4);
+    await time.increase(86400 * 30 * 4);
     await this.lockUpPool.exit(this.hunt.address, 0, false, { from: creator });
 
     // LockUp pool test again
@@ -137,10 +137,11 @@ contract('Basic contract functionality', ([creator, alice]) => {
   it('should handle double-exits properly', async () => {
     await this.hunt.approve(this.lockUpPool.address, 10000, { from: creator });
     await this.lockUpPool.doLockUp(this.hunt.address, 10000, 3, { from: creator });
-    await this.lockUpPool.exit(this.hunt.address, 0, true, { from: creator });
+    await time.increase(86400 * 30 * 4);
+    await this.lockUpPool.exit(this.hunt.address, 0, false, { from: creator });
 
     await expectRevert(
-      this.lockUpPool.exit(this.hunt.address, 0, true, { from: creator }),
+      this.lockUpPool.exit(this.hunt.address, 0, false, { from: creator }),
       'already exited'
     );
 
