@@ -21,3 +21,8 @@ If applicable, add screenshots to help explain your problem.=
 
 **Additional context**
 Add any other context about the problem here.
+
+**Bounty information**
+1. Reporter's email address:
+2. What crypto currency do you want to receive the bounty?: (BTC / ETH / HUNT)
+2. Wallet address to receive the bounty:
