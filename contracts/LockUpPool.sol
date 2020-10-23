@@ -14,6 +14,9 @@ contract LockUpPool is Initializable, OwnableUpgradeSafe {
 
   uint256 public PENALTY_RATE;
   uint256 public PLATFORM_FEE_RATE;
+  uint256 public SECONDS_IN_MONTH = 3600; // For test: 1 month = 1 hour
+  // uint256 public SECONDS_IN_MONTH = 2592000;
+
   bool public emergencyMode;
 
   struct LockUp {
@@ -144,7 +147,7 @@ contract LockUpPool is Initializable, OwnableUpgradeSafe {
     userLockUp.lockUps.push(
       LockUp(
         durationInMonths,
-        block.timestamp.add(durationInMonths.mul(2592000)), // unlockedAt
+        block.timestamp.add(durationInMonths.mul(SECONDS_IN_MONTH)), // unlockedAt
         amount,
         effectiveAmount,
         0
@@ -282,6 +285,6 @@ contract LockUpPool is Initializable, OwnableUpgradeSafe {
   function lockedUpAt(address tokenAddress, address account, uint256 lockUpId) external view returns (uint256) {
     LockUp storage lockUp = userLockUps[tokenAddress][account].lockUps[lockUpId];
 
-    return lockUp.unlockedAt.sub(lockUp.durationInMonths.mul(2592000));
+    return lockUp.unlockedAt.sub(lockUp.durationInMonths.mul(SECONDS_IN_MONTH));
   }
 }
