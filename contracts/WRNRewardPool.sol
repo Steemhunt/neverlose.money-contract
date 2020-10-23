@@ -64,7 +64,7 @@ contract WRNRewardPool is LockUpPool {
   // MARK: - Overiiding LockUpPool
 
   function addLockUpRewardPool(address tokenAddress, uint256 multiplier, uint256 maxLockUpLimit, bool shouldUpdate) external onlyOwner {
-    require(multiplier >= 1, 'multiplier must be greater than or equal to 1');
+    require(multiplier >= 0, 'multiplier must be greater than or equal to 0');
 
     if(shouldUpdate) {
       // NOTE: This could fail with out-of-gas if too many tokens are added.
