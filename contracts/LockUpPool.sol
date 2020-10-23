@@ -271,14 +271,15 @@ contract LockUpPool is Initializable, OwnableUpgradeSafe {
     return pools.length;
   }
 
-  function getLockUp(address tokenAddress, address account, uint256 lockUpId) external view returns (uint256, uint256, uint256, uint256) {
+  function getLockUp(address tokenAddress, address account, uint256 lockUpId) external view returns (uint256, uint256, uint256, uint256, uint256) {
     LockUp storage lockUp = userLockUps[tokenAddress][account].lockUps[lockUpId];
 
     return (
       lockUp.durationInMonths,
       lockUp.unlockedAt,
       lockUp.amount,
-      lockUp.effectiveAmount
+      lockUp.effectiveAmount,
+      lockUp.exitedAt
     );
   }
 
