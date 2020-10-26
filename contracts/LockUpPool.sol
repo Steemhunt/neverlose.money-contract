@@ -21,7 +21,7 @@ contract LockUpPool is Initializable, OwnableUpgradeSafe {
 
   struct LockUp {
     uint256 durationInMonths;
-    uint256 unlockedAt;
+    uint256 unlockedAt; // NOTE: Potential block time manipulation by miners
     uint256 amount;
     uint256 effectiveAmount; // amount * durationBoost
     uint256 exitedAt;
