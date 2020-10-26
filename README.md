@@ -8,6 +8,17 @@ A lock-up smart contract HODL protocol on Ethereum that pays bonus to the winner
 Source: https://youtu.be/vCpT-UmVf3g
 
 
+## Ropsten Testnet
+ETH faucet for paying gas fee: https://faucet.dimensions.network/
+
+- Contract : 0xE6d830937FA8DB2ebD2c046C58F797A95550fA4E
+- Test tokens
+  - WRN: 0x65E53B24247aFC5Ea186bC25C00499329bb7B1bc
+  - HUNT: 0xC8C7C7B0b5A343aA4B6327AFFC70e93B2De8Ac26
+  - WETH: 0x8df2572B9e14239fEb2b01E0047b1f2D927f89F5
+  - WBTC: 0x5A43026dE30A2a9539Be2ff315106F4e146Ce59A
+
+  
 ## Gas consumption
 ```
 ·------------------------------------------|----------------------------|-------------|----------------------------·
