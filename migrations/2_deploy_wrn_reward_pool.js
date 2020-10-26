@@ -8,19 +8,19 @@ module.exports = async function (deployer, network, [creator]) {
   if (['development', 'ganache', 'ropsten'].indexOf(network) > -1) {
     await deployer.deploy(ERC20Token, { from: creator });
     const wrnToken = await ERC20Token.deployed();
-    wrnToken.initialize('Neverlose.money', 'WRN', toBN(100000));
+    wrnToken.initialize('TEST Neverlose.money', 'WRN', toBN(100000));
 
     await deployer.deploy(ERC20Token, { from: creator });
     const hunt = await ERC20Token.deployed();
-    hunt.initialize('HUNT Token', 'HUNT', toBN(100000));
+    hunt.initialize('TEST HUNT Token', 'HUNT', toBN(100000));
 
     await deployer.deploy(ERC20Token, { from: creator });
     const weth = await ERC20Token.deployed();
-    weth.initialize('Wrapped ETH', 'WETH', toBN(100000));
+    weth.initialize('TEST Wrapped ETH', 'WETH', toBN(100000));
 
     await deployer.deploy(ERC20Token, { from: creator });
     const wbtc = await ERC20Token.deployed();
-    wbtc.initialize('Wrapped BTC', 'WBTC', toBN(100000));
+    wbtc.initialize('TEST Wrapped BTC', 'WBTC', toBN(100000));
 
     await deployer.deploy(WRNRewardPool, { from: creator });
     const wrnRewardPool = await WRNRewardPool.deployed();

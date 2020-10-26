@@ -41,6 +41,7 @@ Thumbs.db
 
 # dotenv-rails
 .env*
+!.env.example
 
 storage/*
 
