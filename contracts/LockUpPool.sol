@@ -14,8 +14,7 @@ contract LockUpPool is Initializable, OwnableUpgradeSafe {
 
   uint256 public PENALTY_RATE;
   uint256 public PLATFORM_FEE_RATE;
-  uint256 public SECONDS_IN_MONTH = 3600; // For test: 1 month = 1 hour
-  // uint256 public SECONDS_IN_MONTH = 2592000;
+  uint256 public SECONDS_IN_MONTH;
 
   bool public emergencyMode;
 
@@ -80,10 +79,13 @@ contract LockUpPool is Initializable, OwnableUpgradeSafe {
   //   => userLockUp.bonusDebt = tokenStat.accBonusPerShare * effectiveAmount)
 
   function initialize() public initializer {
+    // manually call the initializers of all parent contracts
     OwnableUpgradeSafe.__Ownable_init();
 
     PENALTY_RATE = 10;
     PLATFORM_FEE_RATE = 3;
+    SECONDS_IN_MONTH = 3600; // For test: 1 month = 1 hour
+    // SECONDS_IN_MONTH = 2592000;
   }
 
   modifier _checkPoolExists(address tokenAddress) {
