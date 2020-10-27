@@ -3,7 +3,7 @@ import './openzeppelin/math/Math.sol';
 import './openzeppelin/presets/ERC20PresetMinterPauser.sol';
 import './LockUpPool.sol';
 
-pragma solidity ^0.6.12;
+pragma solidity ^0.7.1;
 
 contract WRNRewardPool is LockUpPool {
   using SafeMath for uint256;

@@ -5,7 +5,7 @@ import "./openzeppelin/token/ERC20/SafeERC20.sol";
 import "./openzeppelin/access/Ownable.sol";
 import "./openzeppelin/utils/Address.sol";
 
-pragma solidity ^0.6.12;
+pragma solidity ^0.7.1;
 
 contract LockUpPool is Initializable, OwnableUpgradeSafe {
   using Address for address;

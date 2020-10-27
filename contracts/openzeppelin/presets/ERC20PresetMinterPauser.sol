@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.6.0;
+pragma solidity ^0.7.1;
 
 import "../access/AccessControl.sol";
 import "../GSN/Context.sol";
@@ -51,7 +51,6 @@ contract ERC20PresetMinterPauserUpgradeSafe is Initializable, ContextUpgradeSafe
         _setupRole(DEFAULT_ADMIN_ROLE, _msgSender());
         _setupRole(MINTER_ROLE, _msgSender());
         _setupRole(PAUSER_ROLE, _msgSender());
-
     }
 
     /**
@@ -80,20 +79,6 @@ contract ERC20PresetMinterPauserUpgradeSafe is Initializable, ContextUpgradeSafe
     function pause() public {
         require(hasRole(PAUSER_ROLE, _msgSender()), "ERC20PresetMinterPauser: must have pauser role to pause");
         _pause();
-    }
-
-    /**
-     * @dev Add a token minter
-     *
-     * ADDED for other reward pools can mint additional tokens
-     *
-     * Requirements:
-     *
-     * - the caller must have the `MINTER_ROLE`.
-     */
-    function addMinter(address addr) public {
-        require(hasRole(MINTER_ROLE, _msgSender()), "ERC20PresetMinterPauser: must have minter role to add a minter");
-        _setupRole(MINTER_ROLE, addr);
     }
 
     /**

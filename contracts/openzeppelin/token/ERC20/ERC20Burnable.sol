@@ -1,9 +1,10 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.6.0;
+pragma solidity ^0.7.1;
 
 import "../../GSN/Context.sol";
 import "./ERC20.sol";
 import "../../Initializable.sol";
+import "../../math/SafeMath.sol";
 
 /**
  * @dev Extension of {ERC20} that allows token holders to destroy both their own
@@ -11,6 +12,8 @@ import "../../Initializable.sol";
  * recognized off-chain (via event analysis).
  */
 abstract contract ERC20BurnableUpgradeSafe is Initializable, ContextUpgradeSafe, ERC20UpgradeSafe {
+    using SafeMath for uint256;
+
     function __ERC20Burnable_init() internal initializer {
         __Context_init_unchained();
         __ERC20Burnable_init_unchained();
