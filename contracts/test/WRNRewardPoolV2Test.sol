@@ -1,4 +1,10 @@
 // SPDX-License-Identifier: MIT
+
+/**
+ * This is just a copy of WRNRewardPool.sol with a few variation (marked with V2:) in order to test upgrades plugin
+ * Ignore this file entirely for any audits or code review
+ */
+
 import '../openzeppelin/math/Math.sol';
 import '../openzeppelin/presets/ERC20PresetMinterPauser.sol';
 import '../LockUpPool.sol';
