@@ -124,14 +124,54 @@ contract('Basic contract functionality', ([creator, alice]) => {
     assert.equal(effectiveTotalLockUp.valueOf(), 0);
   });
 
+  it('should cut penalty and platform fee', async () => {
+    await this.hunt.transfer(alice, 10000, { from: creator });
+    await this.hunt.approve(this.lockUpPool.address, 10000, { from: alice });
+    await this.lockUpPool.doLockUp(this.hunt.address, 10000, 3, { from: alice });
+    assert.equal((await this.hunt.balanceOf(alice)).valueOf(), 0);
+    await this.lockUpPool.exit(this.hunt.address, 0, true, { from: alice });
+
+    assert.equal((await this.hunt.balanceOf(alice)).valueOf(), 8700);
+    assert.equal((await this.hunt.balanceOf(creator)).valueOf(), 300); // platform fee
+
+    const [
+      durationInMonths,
+      unlockedAt,
+      amount,
+      effectiveAmount,
+      exitedAt,
+      penalty,
+      fee
+    ] = Object.values(await this.lockUpPool.getLockUp(this.hunt.address, alice, 0));
+    assert.equal(durationInMonths, 3);
+    assert.equal(amount, 10000);
+    assert.equal(effectiveAmount, 10000);
+    assert.equal(penalty, 1000);
+    assert.equal(fee, 300);
+  });
+
   it('should not cut any fee on matured lockup', async () => {
     await this.hunt.approve(this.lockUpPool.address, 10000, { from: creator });
-    await this.lockUpPool.doLockUp(this.hunt.address, 10000, 3, { from: creator });
+    await this.lockUpPool.doLockUp(this.hunt.address, 10000, 6, { from: creator });
     await time.increase(86400 * 30 * 4);
     await this.lockUpPool.exit(this.hunt.address, 0, false, { from: creator });
 
-    // LockUp pool test again
     assert.equal((await this.hunt.balanceOf(creator, { from: creator })).valueOf(), 10000);
+
+    const [
+      durationInMonths,
+      unlockedAt,
+      amount,
+      effectiveAmount,
+      exitedAt,
+      penalty,
+      fee
+    ] = Object.values(await this.lockUpPool.getLockUp(this.hunt.address, creator, 0));
+    assert.equal(durationInMonths, 6);
+    assert.equal(amount, 10000);
+    assert.equal(effectiveAmount, 20000);
+    assert.equal(penalty, 0);
+    assert.equal(fee, 0);
   });
 
   it('should handle double-exits properly', async () => {

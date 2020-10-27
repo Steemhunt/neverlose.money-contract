@@ -25,6 +25,8 @@ contract LockUpPool is Initializable, OwnableUpgradeSafe {
     uint256 amount;
     uint256 effectiveAmount; // amount * durationBoost
     uint256 exitedAt;
+    uint256 penalty;
+    uint256 fee;
   }
 
   struct UserLockUp {
@@ -150,7 +152,9 @@ contract LockUpPool is Initializable, OwnableUpgradeSafe {
         block.timestamp.add(durationInMonths.mul(SECONDS_IN_MONTH)), // unlockedAt
         amount,
         effectiveAmount,
-        0
+        0, // exitedAt
+        0, // penalty
+        0 // fee
       )
     );
 
@@ -200,6 +204,8 @@ contract LockUpPool is Initializable, OwnableUpgradeSafe {
 
     // Update lockUp
     lockUp.exitedAt = block.timestamp;
+    lockUp.penalty = penalty;
+    lockUp.fee = fee;
 
     // Update token stats
     TokenStats storage tokenStat = tokenStats[tokenAddress];
@@ -271,7 +277,7 @@ contract LockUpPool is Initializable, OwnableUpgradeSafe {
     return pools.length;
   }
 
-  function getLockUp(address tokenAddress, address account, uint256 lockUpId) external view returns (uint256, uint256, uint256, uint256, uint256) {
+  function getLockUp(address tokenAddress, address account, uint256 lockUpId) external view returns (uint256, uint256, uint256, uint256, uint256, uint256, uint256) {
     LockUp storage lockUp = userLockUps[tokenAddress][account].lockUps[lockUpId];
 
     return (
@@ -279,7 +285,9 @@ contract LockUpPool is Initializable, OwnableUpgradeSafe {
       lockUp.unlockedAt,
       lockUp.amount,
       lockUp.effectiveAmount,
-      lockUp.exitedAt
+      lockUp.exitedAt,
+      lockUp.penalty,
+      lockUp.fee
     );
   }
 

@@ -31,15 +31,6 @@ contract('LockUp and Exit', ([creator, alice, bob, carol]) => {
     assert.equal((await this.hunt.balanceOf(creator, { from: creator })).valueOf(), toBN(8000));
   });
 
-  it('should cut penalty and platform fee', async () => {
-    await this.lockUpPool.doLockUp(this.hunt.address, toBN(1000), 3, { from: alice });
-    assert.equal((await this.hunt.balanceOf(alice)).valueOf() / 1e18, 0);
-    await this.lockUpPool.exit(this.hunt.address, 0, true, { from: alice });
-
-    // LockUp pool test again
-    assert.equal((await this.hunt.balanceOf(alice, { from: alice })).valueOf() / 1e18, 870);
-  });
-
   it('takes penalty and platform fee properly', async () => {
     await this.lockUpPool.doLockUp(this.hunt.address, toBN(1000), 3, { from: creator }); // duration boost: 1x
     await this.lockUpPool.doLockUp(this.hunt.address, toBN(1000), 12, { from: alice }); // duration boost: 4x
