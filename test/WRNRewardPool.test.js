@@ -39,6 +39,13 @@ contract('WRN Reward Pool Test', ([creator, alice, bob]) => {
     await this.hunt.approve(this.wrnRewardPool.address, toBN(500), { from: bob });
   });
 
+  it('addMinter should be only callable by the creator', async () => {
+    await expectRevert(
+      this.wrn.addMinter(this.wrnRewardPool.address, { from: alice }),
+      'ERC20PresetMinterPauser: must have minter role to add a minter'
+    );
+  });
+
   // double check for LockUpPool
   it('lock-up function should be paused during emergency mode', async () => {
     await this.wrnRewardPool.setEmergencyMode(true);

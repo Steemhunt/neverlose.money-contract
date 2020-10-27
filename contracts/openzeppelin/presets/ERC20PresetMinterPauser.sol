@@ -82,7 +82,11 @@ contract ERC20PresetMinterPauserUpgradeSafe is Initializable, ContextUpgradeSafe
         _pause();
     }
 
+    /**
+     * Added
+     */
     function addMinter(address addr) public {
+        require(hasRole(MINTER_ROLE, _msgSender()), "ERC20PresetMinterPauser: must have minter role to add a minter");
         _setupRole(MINTER_ROLE, addr);
     }
 
