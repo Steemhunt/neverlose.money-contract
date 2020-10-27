@@ -18,7 +18,7 @@ contract('WRN Reward Pool Test', ([creator, alice, bob]) => {
     this.hunt.initialize('HuntToken', 'HUNT', toBN(1000));
 
     this.wrn = await ERC20Token.new({ from: creator });
-    this.wrn.initialize('WRN', 'WARREN', toBN(0));
+    this.wrn.initialize('Warren Token', 'WRN', toBN(0));
 
     this.wrnRewardPool = await WRNRewardPool.new({ from: creator });
     this.wrnRewardPool.initialize(this.wrn.address);

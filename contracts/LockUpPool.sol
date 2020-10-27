@@ -12,6 +12,7 @@ contract LockUpPool is Initializable, OwnableUpgradeSafe {
   using SafeMath for uint256;
   using SafeERC20 for IERC20;
 
+  // NOTE: didn't use actual constant variable just in case we may chage it on upgrades
   uint256 public PENALTY_RATE;
   uint256 public PLATFORM_FEE_RATE;
   uint256 public SECONDS_IN_MONTH;

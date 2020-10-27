@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: MIT
-import './openzeppelin/math/Math.sol';
-import './openzeppelin/presets/ERC20PresetMinterPauser.sol';
-import './LockUpPool.sol';
+import '../openzeppelin/math/Math.sol';
+import '../openzeppelin/presets/ERC20PresetMinterPauser.sol';
+import '../LockUpPool.sol';
 
 pragma solidity ^0.7.1;
 
-contract WRNRewardPool is LockUpPool {
+contract WRNRewardPoolV2Test is LockUpPool {
   using SafeMath for uint256;
   using SafeERC20 for ERC20PresetMinterPauserUpgradeSafe;
 
@@ -42,6 +42,9 @@ contract WRNRewardPool is LockUpPool {
   event PoolAdded(address indexed tokenAddress, uint256 multiplier);
   event WRNMinted(address indexed tokenAddress, uint256 amount);
   event WRNClaimed(address indexed tokenAddress, address indexed account, uint256 amount);
+
+  // V2: Added
+  uint256 public varAdded;
 
   function initialize(address WRNAddress) public initializer {
     LockUpPool.initialize();
@@ -121,13 +124,18 @@ contract WRNRewardPool is LockUpPool {
     _updateDebt(tokenAddress, msg.sender);
   }
 
+  function setVarAdded(uint256 newVar) external {
+    varAdded = newVar;
+  }
+
   function exit(address tokenAddress, uint256 lockUpIndex, bool force) public override {
-    // Should claim WRN before exit, otherwise `pendingWRN` will become zero afterwards
-    claimWRN(tokenAddress);
+    // Disable warnings
+    tokenAddress;
+    lockUpIndex;
+    force;
+    varAdded = 5678;
 
-    super.exit(tokenAddress, lockUpIndex, force);
-
-    _updateDebt(tokenAddress, msg.sender);
+    revert('disabled'); // V2: Disabled
   }
 
   // Return WRN per block over the given from to to block.
@@ -228,6 +236,6 @@ contract WRNRewardPool is LockUpPool {
     devAddress = _devAddress;
   }
 
-  // Reserved storage space to allow for layout changes in the future.
-  uint256[50] private ______gap;
+  // V2: Changed from 50 -> 49
+  uint256[49] private ______gap;
 }
