@@ -288,4 +288,7 @@ contract LockUpPool is Initializable, OwnableUpgradeSafe {
 
     return lockUp.unlockedAt.sub(lockUp.durationInMonths.mul(SECONDS_IN_MONTH));
   }
+
+  // Reserved storage space to allow for layout changes in the future.
+  uint256[50] private ______gap;
 }

@@ -83,7 +83,13 @@ contract ERC20PresetMinterPauserUpgradeSafe is Initializable, ContextUpgradeSafe
     }
 
     /**
-     * Added
+     * @dev Add a token minter
+     *
+     * ADDED for other reward pools can mint additional tokens
+     *
+     * Requirements:
+     *
+     * - the caller must have the `MINTER_ROLE`.
      */
     function addMinter(address addr) public {
         require(hasRole(MINTER_ROLE, _msgSender()), "ERC20PresetMinterPauser: must have minter role to add a minter");

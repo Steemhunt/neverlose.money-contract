@@ -227,5 +227,6 @@ contract WRNRewardPool is LockUpPool {
     devAddress = _devAddress;
   }
 
-  // MARK: - Utility view functions
+  // Reserved storage space to allow for layout changes in the future.
+  uint256[50] private ______gap;
 }
