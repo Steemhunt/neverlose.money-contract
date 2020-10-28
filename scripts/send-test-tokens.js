@@ -13,9 +13,27 @@ const infuraProvider = (network) => {
 const web3 = new Web3(infuraProvider('goerli'));
 
 const tokenAddresses = {
-  HUNT: '0xe69109b276F653a4DC2E14CBD2855b718e85188D',
-  WETH: '0x38F94CB5C245733bA5863f09F5e841fB595B2961',
-  WBTC: '0x4605e90c7778E7c97a85D2cA336b7f8de5d90715'
+  HUNT: '0x5A43026dE30A2a9539Be2ff315106F4e146Ce59A',
+  WETH: '0xb7e94Cce902E34e618A23Cb82432B95d03096146',
+  WBTC: '0xE6d830937FA8DB2ebD2c046C58F797A95550fA4E'
+}
+
+async function sendETH(from, to, amount) {
+  return new Promise(async (resolve, reject) => {
+    web3.eth.sendTransaction(Object.assign({ to: to, value: amount + '0'.repeat(18) }, { from: from }))
+      .once('transactionHash', async function(hash) {
+        console.log(`Sending - ${hash}`);
+      })
+      .on('confirmation', async function(confNumber, receipt) {
+        if (confNumber === 1) {
+          console.log(` => Sent ${amount} ETH to ${to}`);
+          resolve();
+        }
+      })
+      .on('error', async function(e) {
+        reject(e);
+      });
+  });
 }
 
 async function sendToken(token, from, to, amount) {
@@ -46,6 +64,8 @@ async function sendAll(to) {
   }
   const owner = (await web3.eth.getAccounts())[0];
   console.log(`Owner address: ${owner}`);
+
+  await sendETH(owner, to , 1);
 
   for (var token in tokenAddresses) {
     await sendToken(token, owner, to , 1000);
