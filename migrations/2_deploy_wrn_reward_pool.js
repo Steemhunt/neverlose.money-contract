@@ -21,12 +21,13 @@ module.exports = async function (deployer, network, [creator]) {
 
     await wrnToken.addMinter(wrnRewardPool.address, { from: creator });
 
-    await wrnRewardPool.addLockUpRewardPool(hunt.address, 2, toBN(9999999999999), false);
-    await wrnRewardPool.addLockUpRewardPool(weth.address, 1, toBN(9999999999999), false);
-    await wrnRewardPool.addLockUpRewardPool(wbtc.address, 1, toBN(9999999999999, 8), false);
+    await wrnRewardPool.addLockUpRewardPool(hunt.address, 2, toBN(10000), false);
+    await wrnRewardPool.addLockUpRewardPool(weth.address, 1, toBN(10000), false);
+    await wrnRewardPool.addLockUpRewardPool(wbtc.address, 1, toBN(10000, 8), false);
 
-    console.log(`WRNRewardPool: ${wrnRewardPool.address}`);
-    console.log(` - WRN: ${wrnToken.address}\n - HUNT: ${hunt.address}\n - WETH: ${weth.address}\n - WBTC: ${wbtc.address}`);
+    console.log(`- Contract: ${wrnRewardPool.address}`);
+    console.log('- Test tokens');
+    console.log(`   - WRN: ${wrnToken.address}\n  - HUNT: ${hunt.address}\n  - WETH: ${weth.address}\n  - WBTC: ${wbtc.address}`);
     console.log(`Owner: ${await wrnRewardPool.owner()} / Dev: ${await wrnRewardPool.devAddress()}`);
     console.log(`Sum of reward pool multiplers: ${await wrnRewardPool.totalMultiplier()}`);
     console.log(`Owner HUNT balance: ${await hunt.balanceOf(creator)}`);
