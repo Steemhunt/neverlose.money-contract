@@ -6,7 +6,7 @@ const { toBN } = require('./helpers/NumberHelpers');
 contract('Basic contract functionality', ([creator, alice]) => {
   beforeEach(async () => {
     this.hunt = await ERC20Token.new({ from: creator });
-    await this.hunt.initialize('HuntToken', 'HUNT', 10000);
+    await this.hunt.initialize('HuntToken', 'HUNT', 18, 10000);
 
     this.lockUpPool = await LockUpPool.new({ from: creator });
     await this.lockUpPool.initialize();
@@ -38,7 +38,7 @@ contract('Basic contract functionality', ([creator, alice]) => {
 
   it('should fail on invalid token address', async () => {
     this.wbtc = await ERC20Token.new({ from: creator });
-    this.wbtc.initialize('Wrapped BTC', 'wBTC', 10000);
+    this.wbtc.initialize('Wrapped BTC', 'wBTC', 8, 10000);
 
     await this.hunt.approve(this.lockUpPool.address, 1000, { from: creator });
     await expectRevert(this.lockUpPool.doLockUp(this.wbtc.address, 1000, 9, { from: creator }), 'token pool does not exist');
@@ -190,21 +190,21 @@ contract('Basic contract functionality', ([creator, alice]) => {
 
   it('owner should be able to add a pool', async () => {
     this.wbtc = await ERC20Token.new({ from: creator });
-    await this.wbtc.initialize('Wrapped BTC', 'wBTC', 10000);
-    await this.lockUpPool.addLockUpPool(this.wbtc.address, toBN(123));
+    await this.wbtc.initialize('Wrapped BTC', 'wBTC', 8, 10000);
+    await this.lockUpPool.addLockUpPool(this.wbtc.address, toBN(123, 8));
 
     const [maxLockUpLimit, totalLockUp] = Object.values(await this.lockUpPool.tokenStats(this.wbtc.address, { from: creator }));
 
-    assert.equal(maxLockUpLimit / 1e18, 123);
+    assert.equal(maxLockUpLimit / 1e8, 123);
     assert.equal(totalLockUp, 0);
   });
 
   it('non-owner should not be able to add a pool', async () => {
     this.wbtc = await ERC20Token.new({ from: creator });
-    await this.wbtc.initialize('Wrapped BTC', 'wBTC', 10000);
+    await this.wbtc.initialize('Wrapped BTC', 'wBTC', 8, 10000);
 
     await expectRevert(
-      this.lockUpPool.addLockUpPool(this.wbtc.address, toBN(123), { from: alice}),
+      this.lockUpPool.addLockUpPool(this.wbtc.address, toBN(123, 8), { from: alice}),
       'Ownable: caller is not the owner.'
     );
   });

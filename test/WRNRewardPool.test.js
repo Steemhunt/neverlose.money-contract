@@ -15,10 +15,10 @@ const {
 contract('WRN Reward Pool Test', ([creator, alice, bob]) => {
   beforeEach(async () => {
     this.hunt = await ERC20Token.new({ from: creator });
-    this.hunt.initialize('HuntToken', 'HUNT', toBN(1000));
+    this.hunt.initialize('HuntToken', 'HUNT', 18, toBN(1000));
 
     this.wrn = await ERC20Token.new({ from: creator });
-    this.wrn.initialize('Warren Token', 'WRN', toBN(0));
+    this.wrn.initialize('Warren Token', 'WRN', 18, toBN(0));
 
     this.wrnRewardPool = await WRNRewardPool.new({ from: creator });
     this.wrnRewardPool.initialize(this.wrn.address);
@@ -57,14 +57,14 @@ contract('WRN Reward Pool Test', ([creator, alice, bob]) => {
 
   it('should not update a non-existing pool info', async () => {
     this.eth = await ERC20Token.new({ from: creator });
-    this.eth.initialize('Ethereum', 'ETH', toBN(1000));
+    this.eth.initialize('Ethereum', 'ETH', 18, toBN(1000));
 
     await expectRevert(this.wrnRewardPool.updatePool(this.eth.address), 'token pool does not exist');
   });
 
   it('should not have any pending WRN for non-existing pool', async () => {
     this.eth = await ERC20Token.new({ from: creator });
-    this.eth.initialize('Ethereum', 'ETH', toBN(1000));
+    this.eth.initialize('Ethereum', 'ETH', 18, toBN(1000));
 
     assert.equal((await this.wrnRewardPool.pendingWRN(this.eth.address, { from: creator })).valueOf(), 0);
   });
@@ -73,7 +73,7 @@ contract('WRN Reward Pool Test', ([creator, alice, bob]) => {
     assert.equal((await this.wrnRewardPool.totalMultiplier()).valueOf(), 2);
 
     this.eth = await ERC20Token.new({ from: creator });
-    this.eth.initialize('Ethereum', 'ETH', toBN(1000));
+    this.eth.initialize('Ethereum', 'ETH', 18, toBN(1000));
     await this.wrnRewardPool.addLockUpRewardPool(this.eth.address, 1, toBN(9999999999999), false);
 
     assert.equal((await this.wrnRewardPool.totalMultiplier()).valueOf(), 3);
@@ -151,7 +151,7 @@ contract('WRN Reward Pool Test', ([creator, alice, bob]) => {
 
   it('should calculate reward pool multiplier correctly', async () => {
     this.weth = await ERC20Token.new({ from: creator });
-    this.weth.initialize('WETH', 'WETH', toBN(1000));
+    this.weth.initialize('WETH', 'WETH', 18, toBN(1000));
     await this.weth.mint(bob, toBN(500), { from: creator });
     await this.weth.approve(this.wrnRewardPool.address, toBN(500), { from: bob });
 
@@ -185,7 +185,7 @@ contract('WRN Reward Pool Test', ([creator, alice, bob]) => {
 
   it('should update reward pool multiplier correctly', async () => {
     this.weth = await ERC20Token.new({ from: creator });
-    this.weth.initialize('WETH', 'WETH', toBN(1000));
+    this.weth.initialize('WETH', 'WETH', 18, toBN(1000));
     await this.weth.mint(bob, toBN(500), { from: creator });
     await this.weth.approve(this.wrnRewardPool.address, toBN(500), { from: bob });
 
@@ -217,7 +217,7 @@ contract('WRN Reward Pool Test', ([creator, alice, bob]) => {
 
   it('adding a reward pool in the middle of other pools', async () => {
     this.weth = await ERC20Token.new({ from: creator });
-    this.weth.initialize('WETH', 'WETH', toBN(1000));
+    this.weth.initialize('WETH', 'WETH', 18, toBN(1000));
     await this.weth.mint(bob, toBN(500), { from: creator });
     await this.weth.approve(this.wrnRewardPool.address, toBN(500), { from: bob });
 
@@ -242,7 +242,7 @@ contract('WRN Reward Pool Test', ([creator, alice, bob]) => {
 
   it('adding a reward pool in the middle of other pools WITH updates', async () => {
     this.weth = await ERC20Token.new({ from: creator });
-    this.weth.initialize('WETH', 'WETH', toBN(1000));
+    this.weth.initialize('WETH', 'WETH', 18, toBN(1000));
 
     await this.wrnRewardPool.doLockUp(this.hunt.address, toBN(1), 3, { from: alice }); // 100% on HUNT pool
     // Block 0 - alice: 0
@@ -264,7 +264,7 @@ contract('WRN Reward Pool Test', ([creator, alice, bob]) => {
 
   it('adding a reward pool in the middle of other pools WITHOUT updates', async () => {
     this.weth = await ERC20Token.new({ from: creator });
-    this.weth.initialize('WETH', 'WETH', toBN(1000));
+    this.weth.initialize('WETH', 'WETH', 18, toBN(1000));
 
     await this.wrnRewardPool.doLockUp(this.hunt.address, toBN(1), 3, { from: alice }); // 100% on HUNT pool
     // Block 0 - alice: 0

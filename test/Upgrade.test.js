@@ -6,8 +6,8 @@ const { deployProxy, upgradeProxy } = require('@openzeppelin/truffle-upgrades');
 
 contract('WRNRewardPoolV2Test with upgrades plugin', ([creator, alice]) => {
   beforeEach(async () => {
-    this.wrn = await deployProxy(ERC20Token, ['TEST WARREN', 'WRN', 1000], { unsafeAllowCustomTypes: true });
-    this.hunt = await deployProxy(ERC20Token, ['TEST HUNT', 'HUNT', 1000], { unsafeAllowCustomTypes: true });
+    this.wrn = await deployProxy(ERC20Token, ['TEST WARREN', 'WRN', 18, 1000], { unsafeAllowCustomTypes: true });
+    this.hunt = await deployProxy(ERC20Token, ['TEST HUNT', 'HUNT', 18, 1000], { unsafeAllowCustomTypes: true });
     this.wrnRewardPool = await deployProxy(WRNRewardPool, [this.wrn.address], { unsafeAllowCustomTypes: true });
 
     await this.wrn.addMinter(this.wrnRewardPool.address);
