@@ -5,7 +5,7 @@ module.exports = async function (deployer, network, [creator]) {
   const WRNRewardPool = artifacts.require('WRNRewardPool');
   const { toBN } = require('../test/helpers/NumberHelpers');
 
-  if (['development', 'ganache', 'ropsten'].indexOf(network) > -1) {
+  if (['development', 'ganache', 'goerli'].indexOf(network) > -1) {
     // REF: https://docs.openzeppelin.com/upgrades-plugins/1.x/truffle-upgrades
     const { deployProxy } = require('@openzeppelin/truffle-upgrades');
 

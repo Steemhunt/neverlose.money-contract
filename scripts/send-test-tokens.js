@@ -10,7 +10,7 @@ const infuraProvider = (network) => {
     `https://${network}.infura.io/v3/${process.env.INFURA_PROJECT_ID}`
   )
 }
-const web3 = new Web3(infuraProvider('ropsten'));
+const web3 = new Web3(infuraProvider('goerli'));
 
 const tokenAddresses = {
   HUNT: '0xe69109b276F653a4DC2E14CBD2855b718e85188D',

@@ -132,7 +132,7 @@ contract WRNRewardPool is LockUpPool {
 
   // Return WRN per block over the given from to to block.
   function _getWRNPerBlock(uint256 from, uint256 to) private view returns (uint256) {
-    if (from > REWARD_END_BLOCK) { // Reward pool finished
+    if (from > REWARD_END_BLOCK || from < REWARD_START_BLOCK) { // Reward pool finished
       return 0;
     } else if (to >= REWARD_END_BLOCK) { // Partial finished
       return REWARD_END_BLOCK.sub(from).mul(REWARD_PER_BLOCK);

@@ -22,10 +22,11 @@ module.exports = {
       port: 7545,
       network_id: "*"
     },
-    ropsten: {
-      provider: infuraProvider('ropsten'),
-      network_id: '3',
-      gasPrice: 5000000000 // 50 gwei
+    goerli: {
+      provider: infuraProvider('goerli'),
+      network_id: '5',
+      gas: 5000000,
+      gasPrice: 5000000000 // 5 gwei
     }
   },
   compilers: {
