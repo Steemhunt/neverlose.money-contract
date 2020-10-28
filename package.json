@@ -11,5 +11,8 @@
     "eth-gas-reporter": "^0.2.17",
     "truffle": "^5.1.47",
     "truffle-flattener": "^1.5.0"
+  },
+  "dependencies": {
+    "web3": "^1.3.0"
   }
 }
