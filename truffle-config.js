@@ -6,7 +6,7 @@ dotenv.config()
 const infuraProvider = (network) => {
   return new HDWalletProvider(
     process.env.MNEMONIC,
-    `https://${network}.infura.io/v3/${process.env.INFURA_PROJECT_ID}`
+    `https://eth-${network}.alchemyapi.io/v2/${process.env.ARCHEMY_PROJECT_ID}`
   )
 }
 

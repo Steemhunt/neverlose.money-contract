@@ -7,7 +7,7 @@ const HDWalletProvider = require('@truffle/hdwallet-provider');
 const infuraProvider = (network) => {
   return new HDWalletProvider(
     process.env.MNEMONIC,
-    `https://${network}.infura.io/v3/${process.env.INFURA_PROJECT_ID}`
+    `https://eth-${network}.alchemyapi.io/v2/${process.env.ARCHEMY_PROJECT_ID}`
   )
 }
 const web3 = new Web3(infuraProvider('goerli'));
