@@ -8,6 +8,18 @@ A lock-up smart contract HODL protocol on Ethereum that pays bonus to the winner
 
 Source: https://youtu.be/vCpT-UmVf3g
 
+## Contracts
+### LockUpPool.sol
+A lock-up smart contract that pays bonus to the winners with the losers' penalty when they break lock-up prematurely.
+
+### WRNRewardPool.sol
+A governance token distribution contract on top of LockUpPool. A maximum of 1.2M WRN tokens will be distributed for 4 years depending on users' contribution to the lockup pool
+
+#### Boost Factor
+1. Token Amount: Linear
+2. Lock-up period: 1x (3 months) - 40x (10 years)
+3. Pool multiplier: 2x (HUNT), 1x (WETH), 1x (WBTC)
+
 ## Görli (goerli) Testnet
 - ETH faucet (to pay gas): https://faucet.goerli.mudit.blog/
 - Contract : 0x7f331F0329eCF9d0e52Dd3497a4dff099aC19175
