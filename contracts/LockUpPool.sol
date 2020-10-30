@@ -57,9 +57,9 @@ contract LockUpPool is Initializable, OwnableUpgradeSafe {
   // Token => Account => UserLockUps
   mapping (address => mapping (address => UserLockUp)) public userLockUps;
 
-  event LockedUp(address indexed token, address indexed account, uint256 amount, uint256 totalLockUp, uint256 durationInMonths);
-  event Exited(address indexed token, address indexed account, uint256 amount, uint256 refundAmount, uint256 penalty, uint256 fee, uint256 remainingTotal);
-  event BonusClaimed(address indexed token, address indexed account, uint256 amount);
+  event LockedUp(address indexed token, address indexed account, uint256 amount, uint256 totalLockUp, uint256 durationInMonths, uint256 timestamp);
+  event Exited(address indexed token, address indexed account, uint256 amount, uint256 refundAmount, uint256 penalty, uint256 fee, uint256 remainingTotal, uint256 timestamp);
+  event BonusClaimed(address indexed token, address indexed account, uint256 amount, uint256 timestamp);
 
   // Fancy math here:
   //   - userLockUp.bonusDebt: Amount that should be deducted (the amount accumulated before I join the pool)
@@ -172,7 +172,7 @@ contract LockUpPool is Initializable, OwnableUpgradeSafe {
 
     _updateBonusDebt(tokenAddress, msg.sender);
 
-    emit LockedUp(tokenAddress, msg.sender, amount, tokenStat.totalLockUp, durationInMonths);
+    emit LockedUp(tokenAddress, msg.sender, amount, tokenStat.totalLockUp, durationInMonths, block.timestamp);
   }
 
   // Update user's bonus debt as current accumulated bonus value (accBonusPerShare * effectiveTotal)
@@ -234,7 +234,7 @@ contract LockUpPool is Initializable, OwnableUpgradeSafe {
     token.safeTransfer(msg.sender, refundAmount);
     token.safeTransfer(owner(), fee); // Platform fee
 
-    emit Exited(tokenAddress, msg.sender, lockUp.amount, refundAmount, penalty, fee, userLockUp.total);
+    emit Exited(tokenAddress, msg.sender, lockUp.amount, refundAmount, penalty, fee, userLockUp.total, block.timestamp);
   }
 
   function earnedBonus(address tokenAddress) public view returns (uint256) {
@@ -267,7 +267,7 @@ contract LockUpPool is Initializable, OwnableUpgradeSafe {
 
     IERC20(tokenAddress).safeTransfer(msg.sender, amount);
 
-    emit BonusClaimed(tokenAddress, msg.sender, amount);
+    emit BonusClaimed(tokenAddress, msg.sender, amount, block.timestamp);
   }
 
   // MARK: - Utility view functions

@@ -39,9 +39,9 @@ contract WRNRewardPool is LockUpPool {
   // Dev address for WRN disrtribution
   address public devAddress;
 
-  event PoolAdded(address indexed tokenAddress, uint256 multiplier);
-  event WRNMinted(address indexed tokenAddress, uint256 amount);
-  event WRNClaimed(address indexed tokenAddress, address indexed account, uint256 amount);
+  event PoolAdded(address indexed tokenAddress, uint256 multiplier, uint256 timestamp);
+  event WRNMinted(address indexed tokenAddress, uint256 amount, uint256 timestamp);
+  event WRNClaimed(address indexed tokenAddress, address indexed account, uint256 amount, uint256 timestamp);
 
   function initialize(address WRNAddress) public initializer {
     LockUpPool.initialize();
@@ -84,7 +84,7 @@ contract WRNRewardPool is LockUpPool {
     wrnStats[tokenAddress].multiplier = multiplier;
     totalMultiplier = totalMultiplier.add(multiplier);
 
-    emit PoolAdded(tokenAddress, multiplier);
+    emit PoolAdded(tokenAddress, multiplier, block.timestamp);
   }
 
   function updatePoolMultiplier(address tokenAddress, uint256 multiplier, bool shouldUpdate) external onlyOwner {
@@ -172,7 +172,7 @@ contract WRNRewardPool is LockUpPool {
         wrnToMint.mul(1e18).div(tokenStat.effectiveTotalLockUp)
       );
 
-      emit WRNMinted(tokenAddress, wrnToMint);
+      emit WRNMinted(tokenAddress, wrnToMint, block.timestamp);
     }
 
     wrnStat.lastRewardBlock = block.number;
@@ -221,7 +221,7 @@ contract WRNRewardPool is LockUpPool {
 
     WRNToken.safeTransfer(msg.sender, amount);
 
-    emit WRNClaimed(tokenAddress, msg.sender, amount);
+    emit WRNClaimed(tokenAddress, msg.sender, amount, block.timestamp);
   }
 
   function setDevAddress(address _devAddress) external onlyOwner {
