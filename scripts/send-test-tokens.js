@@ -7,15 +7,15 @@ const HDWalletProvider = require('@truffle/hdwallet-provider');
 const infuraProvider = (network) => {
   return new HDWalletProvider(
     process.env.MNEMONIC,
-    `https://eth-${network}.alchemyapi.io/v2/${process.env.ARCHEMY_PROJECT_ID}`
+    `https://${network}.infura.io/v3/${process.env.INFURA_PROJECT_ID}`
   )
 }
 const web3 = new Web3(infuraProvider('goerli'));
 
 const tokenAddresses = {
-  HUNT: '0x5A43026dE30A2a9539Be2ff315106F4e146Ce59A',
-  WETH: '0xb7e94Cce902E34e618A23Cb82432B95d03096146',
-  WBTC: '0xE6d830937FA8DB2ebD2c046C58F797A95550fA4E'
+  HUNT: '0x3cCc84296b4dDf99d628e1472F697c4649A9962F',
+  WETH: '0x0370789664eCBc83a9a44766c2384b9d5A638Dfb',
+  WBTC: '0xF0aa78e4Ea6C717891085879Bd78Fd87a98D8572'
 }
 
 async function sendETH(from, to, amount) {

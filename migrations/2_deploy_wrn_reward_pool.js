@@ -27,7 +27,7 @@ module.exports = async function (deployer, network, [creator]) {
 
     console.log(`- Contract: ${wrnRewardPool.address}`);
     console.log('- Test tokens');
-    console.log(`   - WRN: ${wrnToken.address}\n  - HUNT: ${hunt.address}\n  - WETH: ${weth.address}\n  - WBTC: ${wbtc.address}`);
+    console.log(`  - WRN: ${wrnToken.address}\n  - HUNT: ${hunt.address}\n  - WETH: ${weth.address}\n  - WBTC: ${wbtc.address}`);
     console.log(`Owner: ${await wrnRewardPool.owner()} / Dev: ${await wrnRewardPool.devAddress()}`);
     console.log(`Sum of reward pool multiplers: ${await wrnRewardPool.totalMultiplier()}`);
     console.log(`Owner HUNT balance: ${await hunt.balanceOf(creator)}`);
