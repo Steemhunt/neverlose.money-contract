@@ -401,13 +401,13 @@
     web3-utils "1.2.1"
 
 "@truffle/contract@^4.2.12":
-  version "4.2.27"
-  resolved "https://registry.yarnpkg.com/@truffle/contract/-/contract-4.2.27.tgz#9e3c257cfe67a0153d4c25a5f8eb0d6550cddc49"
-  integrity sha512-3IVUmYYrYopY+9rdOK3EZgRB1NnC+NI83FQ2Xuvgx4fg92Y/ggcofCJdI+D/iXRwaMFkIkqgJ7K8qZEJsoHWjg==
+  version "4.2.28"
+  resolved "https://registry.yarnpkg.com/@truffle/contract/-/contract-4.2.28.tgz#1cde9706b41b77ac9070de1aa0f1bd7663705ddc"
+  integrity sha512-fjHcrVx/ZsAJD2ICNbn2dytwAqzcQUjHBB2k9/laCnk0S59TOK2md/NPGdapzXrbmlRzqWoWBNJXvbPHPbuACA==
   dependencies:
     "@truffle/blockchain-utils" "^0.0.25"
     "@truffle/contract-schema" "^3.3.1"
-    "@truffle/debug-utils" "^4.2.13"
+    "@truffle/debug-utils" "^4.2.14"
     "@truffle/error" "^0.0.11"
     "@truffle/interface-adapter" "^0.4.18"
     bignumber.js "^7.2.1"
@@ -420,13 +420,13 @@
     web3-eth-abi "1.2.9"
     web3-utils "1.2.9"
 
-"@truffle/debug-utils@^4.2.13":
-  version "4.2.13"
-  resolved "https://registry.yarnpkg.com/@truffle/debug-utils/-/debug-utils-4.2.13.tgz#d4014c0c089ad5b6ff5441f07ddadf5579f4f504"
-  integrity sha512-c2NG2JINg6tWufNQHUl5mFStLJ8IyG8TV5gu8DTkKSdV8/7D6NwYqFPoqQr9OjO3jJ+siFhXIYUUBd3WEw7vlQ==
+"@truffle/debug-utils@^4.2.14":
+  version "4.2.14"
+  resolved "https://registry.yarnpkg.com/@truffle/debug-utils/-/debug-utils-4.2.14.tgz#28431691bc3a96bad19e31733d957ac79059d4e7"
+  integrity sha512-g5UTX2DPTzrjRjBJkviGI2IrQRTTSvqjmNWCNZNXP+vgQKNxL9maLZhQ6oA3BuuByVW/kusgYeXt8+W1zynC8g==
   dependencies:
     "@truffle/codec" "^0.7.1"
-    "@trufflesuite/chromafi" "^2.2.0"
+    "@trufflesuite/chromafi" "^2.2.1"
     chalk "^2.4.2"
     debug "^4.1.0"
     highlight.js "^9.15.8"
@@ -468,10 +468,10 @@
     source-map-support "^0.5.19"
     web3 "1.2.9"
 
-"@trufflesuite/chromafi@^2.2.0":
-  version "2.2.0"
-  resolved "https://registry.yarnpkg.com/@trufflesuite/chromafi/-/chromafi-2.2.0.tgz#18cceacbb44f1e22ec956dd7ad21a2ed414b09c7"
-  integrity sha512-km4Px34wZ015PDjAK0wfYBx+zoCE4qR3AY9NWLUvtjnnzhCUkaRFCpZdvwDEyB75EzFBoLwV9iiqboz+mMXwBA==
+"@trufflesuite/chromafi@^2.2.1":
+  version "2.2.1"
+  resolved "https://registry.yarnpkg.com/@trufflesuite/chromafi/-/chromafi-2.2.1.tgz#6bad90d7cb52b3a414c9640346085482dbd41fd9"
+  integrity sha512-kODhM/LsjPrSRGQdaHe113v4xob/aheRmdwN0i6seVNavmHGBvC4ob3COlD1GjaklXsl9QWw4fengowIx1+07Q==
   dependencies:
     ansi-mark "^1.0.0"
     ansi-regex "^3.0.0"
@@ -482,7 +482,6 @@
     detect-indent "^5.0.0"
     he "^1.1.1"
     highlight.js "^9.12.0"
-    husky "^0.14.3"
     lodash.merge "^4.6.2"
     min-indent "^1.0.0"
     strip-ansi "^4.0.0"
@@ -1276,11 +1275,6 @@ chownr@^1.1.1:
   resolved "https://registry.yarnpkg.com/chownr/-/chownr-1.1.4.tgz#6fc9d7b42d32a583596337666e7d08084da2cc6b"
   integrity sha512-jJ0bqzaylmJtVnNgzTeSOs8DPavpbYgEr/b0YL8/2GO3xJEhInFmhKMUnEJQjZumK7KXGFhUy89PrsJWlakBVg==
 
-ci-info@^1.5.0:
-  version "1.6.0"
-  resolved "https://registry.yarnpkg.com/ci-info/-/ci-info-1.6.0.tgz#2ca20dbb9ceb32d4524a683303313f0304b1e497"
-  integrity sha512-vsGdkwSCDpWmP80ncATX7iea5DWQemg1UgCW5J8tqjU3lYw4FBYuj89J0CTVomA7BEfvSZd84GmHko+MxFQU2A==
-
 cids@^0.7.1:
   version "0.7.5"
   resolved "https://registry.yarnpkg.com/cids/-/cids-0.7.5.tgz#60a08138a99bfb69b6be4ceb63bfef7a396b28b2"
@@ -2009,9 +2003,9 @@ eth-ens-namehash@2.0.8, eth-ens-namehash@^2.0.0:
     js-sha3 "^0.5.7"
 
 eth-gas-reporter@^0.2.17:
-  version "0.2.18"
-  resolved "https://registry.yarnpkg.com/eth-gas-reporter/-/eth-gas-reporter-0.2.18.tgz#6b7dd40628d073109ea6439f652a8d41b259ce7d"
-  integrity sha512-P6LQ1QmU9bqU4zmd01Ws/b2EWAD5rT771U0wyJ/c+fKE6RdE9ks8KzjdR1zjosV2uilMfqVTtrBrXveCOnaTyQ==
+  version "0.2.19"
+  resolved "https://registry.yarnpkg.com/eth-gas-reporter/-/eth-gas-reporter-0.2.19.tgz#57ce74e0617d021d04fd1789a4232837d0f41918"
+  integrity sha512-yQmbAa6O9/Yl/syNml2A0R+ZLQnJ9m9jogFXHzjMWVBMUVnAcEskOVyxaMYddkclZdYIMxE99tQy830C2jLsAQ==
   dependencies:
     "@ethersproject/abi" "^5.0.0-beta.146"
     "@solidity-parser/parser" "^0.8.0"
@@ -2950,15 +2944,6 @@ http-signature@~1.2.0:
     jsprim "^1.2.2"
     sshpk "^1.7.0"
 
-husky@^0.14.3:
-  version "0.14.3"
-  resolved "https://registry.yarnpkg.com/husky/-/husky-0.14.3.tgz#c69ed74e2d2779769a17ba8399b54ce0b63c12c3"
-  integrity sha512-e21wivqHpstpoiWA/Yi8eFti8E+sQDSS53cpJsPptPs295QTOQR0ZwnHo2TXy1XOpZFD9rPOd3NpmqTK6uMLJA==
-  dependencies:
-    is-ci "^1.0.10"
-    normalize-path "^1.0.0"
-    strip-indent "^2.0.0"
-
 iconv-lite@0.4.24:
   version "0.4.24"
   resolved "https://registry.yarnpkg.com/iconv-lite/-/iconv-lite-0.4.24.tgz#2022b4b25fbddc21d2f524974a474aafe733908b"
@@ -3039,13 +3024,6 @@ is-callable@^1.1.4, is-callable@^1.2.2:
   version "1.2.2"
   resolved "https://registry.yarnpkg.com/is-callable/-/is-callable-1.2.2.tgz#c7c6715cd22d4ddb48d3e19970223aceabb080d9"
   integrity sha512-dnMqspv5nU3LoewK2N/y7KLtxtakvTuaCsU9FU50/QDmdbHNy/4/JuRtMHqRU22o3q+W89YQndQEeCVwK+3qrA==
-
-is-ci@^1.0.10:
-  version "1.2.1"
-  resolved "https://registry.yarnpkg.com/is-ci/-/is-ci-1.2.1.tgz#e3779c8ee17fccf428488f6e281187f2e632841c"
-  integrity sha512-s6tfsaQaQi3JNciBH6shVqEDvhGut0SUXr31ag8Pd8BBbVVlcGfWhpPmEOoM6RJ5TFhbypvf5yyRw/VXW1IiWg==
-  dependencies:
-    ci-info "^1.5.0"
 
 is-core-module@^2.0.0:
   version "2.0.0"
@@ -3844,11 +3822,6 @@ nofilter@^1.0.4:
   version "1.0.4"
   resolved "https://registry.yarnpkg.com/nofilter/-/nofilter-1.0.4.tgz#78d6f4b6a613e7ced8b015cec534625f7667006e"
   integrity sha512-N8lidFp+fCz+TD51+haYdbDGrcBWwuHX40F5+z0qkUjMJ5Tp+rdSuAkMJ9N9eoolDlEVTf6u5icM+cNKkKW2mA==
-
-normalize-path@^1.0.0:
-  version "1.0.0"
-  resolved "https://registry.yarnpkg.com/normalize-path/-/normalize-path-1.0.0.tgz#32d0e472f91ff345701c15a8311018d3b0a90379"
-  integrity sha1-MtDkcvkf80VwHBWoMRAY07CpA3k=
 
 normalize-path@^3.0.0, normalize-path@~3.0.0:
   version "3.0.0"
@@ -5045,9 +5018,9 @@ truffle-flattener@^1.5.0:
     tsort "0.0.1"
 
 truffle@^5.1.47:
-  version "5.1.50"
-  resolved "https://registry.yarnpkg.com/truffle/-/truffle-5.1.50.tgz#78d7f06f0fbd6ec6d5651d4ba90cecf2c16d332f"
-  integrity sha512-SCAn29Z2i713BsUVfxRqM7AcvBuodTfFa1O9IX2KtqYs4/ACjJCp+702aRb63R9NowCeQ8WawrgRbYlmzCtpPA==
+  version "5.1.51"
+  resolved "https://registry.yarnpkg.com/truffle/-/truffle-5.1.51.tgz#5d10b27a79c1e7dd4d61df09eee0ef4d6b70120e"
+  integrity sha512-Sbw+FF2AfEvkcL/iOFm8UQPfuAfQ695UgxRliBE5sb7WoIN1IwRS0l0Cw+n8XOhkLTxOpoFtVEmrbdqWkZTz7g==
   dependencies:
     app-module-path "^2.2.0"
     mocha "8.1.2"

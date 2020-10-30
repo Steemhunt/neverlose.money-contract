@@ -57,7 +57,7 @@ contract LockUpPool is Initializable, OwnableUpgradeSafe {
   // Token => Account => UserLockUps
   mapping (address => mapping (address => UserLockUp)) public userLockUps;
 
-  event LockedUp(address indexed token, address indexed account, uint256 amount, uint256 totalLockUp);
+  event LockedUp(address indexed token, address indexed account, uint256 amount, uint256 totalLockUp, uint256 durationInMonths);
   event Exited(address indexed token, address indexed account, uint256 amount, uint256 refundAmount, uint256 penalty, uint256 fee, uint256 remainingTotal);
   event BonusClaimed(address indexed token, address indexed account, uint256 amount);
 
@@ -172,7 +172,7 @@ contract LockUpPool is Initializable, OwnableUpgradeSafe {
 
     _updateBonusDebt(tokenAddress, msg.sender);
 
-    emit LockedUp(tokenAddress, msg.sender, amount, tokenStat.totalLockUp);
+    emit LockedUp(tokenAddress, msg.sender, amount, tokenStat.totalLockUp, durationInMonths);
   }
 
   // Update user's bonus debt as current accumulated bonus value (accBonusPerShare * effectiveTotal)
