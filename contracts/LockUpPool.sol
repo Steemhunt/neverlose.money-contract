@@ -34,18 +34,23 @@ contract LockUpPool is Initializable, OwnableUpgradeSafe {
     uint256 effectiveTotal;
     uint256 bonusClaimed; // only used for tracking
     uint256 bonusDebt;
-    uint256 lockedUpCount;
+    uint256 lockedUpCount; // accumulative lock-up count
     LockUp[] lockUps;
   }
 
   struct TokenStats {
     uint256 maxLockUpLimit;
-    uint256 totalLockUp;
+    uint256 totalLockUp; // info
     uint256 effectiveTotalLockUp; // sum(amount * durationBoost)
-    uint256 totalPenalty;
-    uint256 totalPlatformFee;
-    uint256 totalClaimed;
+    uint256 totalPenalty; // info
+    uint256 totalPlatformFee; // info
+    uint256 totalClaimed; // info
     uint256 accBonusPerShare; // Others' Penalty = My Bonus
+    uint256 accTotalLockUp; // info
+    uint256 accLockUpCount; // info
+    uint256 activeLockUpCount; // info
+    uint256 unlockedCount; // info
+    uint256 brokenCount; // info
   }
 
   // Token => TokenStats
@@ -58,7 +63,7 @@ contract LockUpPool is Initializable, OwnableUpgradeSafe {
   mapping (address => mapping (address => UserLockUp)) public userLockUps;
 
   event LockedUp(address indexed token, address indexed account, uint256 amount, uint256 totalLockUp, uint256 durationInMonths, uint256 timestamp);
-  event Exited(address indexed token, address indexed account, uint256 amount, uint256 refundAmount, uint256 penalty, uint256 fee, uint256 remainingTotal, uint256 timestamp);
+  event Exited(address indexed token, address indexed account, uint256 amount, uint256 refundAmount, uint256 penalty, uint256 fee, uint256 remainingTotal, uint256 durationInMonths, uint256 timestamp);
   event BonusClaimed(address indexed token, address indexed account, uint256 amount, uint256 timestamp);
 
   // Fancy math here:
@@ -168,6 +173,9 @@ contract LockUpPool is Initializable, OwnableUpgradeSafe {
 
     // Update TokenStats
     tokenStat.totalLockUp = tokenStat.totalLockUp.add(amount);
+    tokenStat.accTotalLockUp = tokenStat.accTotalLockUp.add(amount);
+    tokenStat.accLockUpCount = tokenStat.accLockUpCount.add(1);
+    tokenStat.activeLockUpCount = tokenStat.activeLockUpCount.add(1);
     tokenStat.effectiveTotalLockUp = tokenStat.effectiveTotalLockUp.add(effectiveAmount);
 
     _updateBonusDebt(tokenAddress, msg.sender);
@@ -217,6 +225,13 @@ contract LockUpPool is Initializable, OwnableUpgradeSafe {
     tokenStat.totalPenalty = tokenStat.totalPenalty.add(penalty);
     tokenStat.totalPlatformFee = tokenStat.totalPlatformFee.add(fee);
 
+    tokenStat.activeLockUpCount = tokenStat.activeLockUpCount.sub(1);
+    if (penalty > 0) {
+      tokenStat.brokenCount = tokenStat.brokenCount.add(1);
+    } else {
+      tokenStat.unlockedCount = tokenStat.unlockedCount.add(1);
+    }
+
     // Update user lockUp stats
     userLockUp.total = userLockUp.total.sub(lockUp.amount);
     userLockUp.effectiveTotal = userLockUp.effectiveTotal.sub(lockUp.effectiveAmount);
@@ -234,7 +249,7 @@ contract LockUpPool is Initializable, OwnableUpgradeSafe {
     token.safeTransfer(msg.sender, refundAmount);
     token.safeTransfer(owner(), fee); // Platform fee
 
-    emit Exited(tokenAddress, msg.sender, lockUp.amount, refundAmount, penalty, fee, userLockUp.total, block.timestamp);
+    emit Exited(tokenAddress, msg.sender, lockUp.amount, refundAmount, penalty, fee, userLockUp.total, lockUp.durationInMonths, block.timestamp);
   }
 
   function earnedBonus(address tokenAddress) public view returns (uint256) {
