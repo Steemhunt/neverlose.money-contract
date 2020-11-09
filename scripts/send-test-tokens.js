@@ -65,16 +65,16 @@ async function sendAll(to) {
   const owner = (await web3.eth.getAccounts())[0];
   console.log(`Owner address: ${owner}`);
 
-  await sendETH(owner, to , 1);
+  await sendETH(owner, to, 1);
 
-  for (var token in tokenAddresses) {
+  for (let token in tokenAddresses) {
     let amount = 10000;
     if(token === 'WETH') {
       amount = 10;
     } else if (token === 'WBTC') {
       amount = 1;
     }
-    await sendToken(token, owner, to , 1000);
+    await sendToken(token, owner, to, amount);
   }
 
   process.exit(0);
