@@ -12,10 +12,10 @@ module.exports = async function (deployer, network, [creator]) {
     // NOTE: Use of `unsafeAllowCustomTypes` as UpgradesPlugins currently do not support validating custom types (enums or structs)
     // REF: https://docs.openzeppelin.com/upgrades-plugins/1.x/faq#what-does-it-mean-for-an-implementation-to-be-compatible
 
-    const wrnToken = await deployProxy(ERC20Token, ['TEST WARREN', 'WRN', 18, toBN(100000)], { deployer, unsafeAllowCustomTypes: true });
-    const hunt = await deployProxy(ERC20Token, ['TEST HUNT Token', 'HUNT', 18, toBN(100000)], { deployer, unsafeAllowCustomTypes: true });
-    const weth = await deployProxy(ERC20Token, ['TEST Wrapped ETH', 'WETH', 18, toBN(100000)], { deployer, unsafeAllowCustomTypes: true });
-    const wbtc = await deployProxy(ERC20Token, ['TEST Wrapped BTC', 'WBTC', 8, toBN(100000, 8)], { deployer, unsafeAllowCustomTypes: true });
+    const wrnToken = await deployProxy(ERC20Token, ['TEST WARREN', 'WRN', 18, toBN(0)], { deployer, unsafeAllowCustomTypes: true });
+    const hunt = await deployProxy(ERC20Token, ['TEST HUNT Token', 'HUNT', 18, toBN(1000000)], { deployer, unsafeAllowCustomTypes: true });
+    const weth = await deployProxy(ERC20Token, ['TEST Wrapped ETH', 'WETH', 18, toBN(10000)], { deployer, unsafeAllowCustomTypes: true });
+    const wbtc = await deployProxy(ERC20Token, ['TEST Wrapped BTC', 'WBTC', 8, toBN(1000, 8)], { deployer, unsafeAllowCustomTypes: true });
 
     const wrnRewardPool = await deployProxy(WRNRewardPool, [wrnToken.address], { deployer, unsafeAllowCustomTypes: true });
 
