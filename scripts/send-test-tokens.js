@@ -66,14 +66,14 @@ async function sendAll(to) {
   console.log(`Owner address: ${owner}`);
 
   try {
-    await sendETH(owner, to, 1);
+    await sendETH(owner, to, 10);
 
     for (let token in tokenAddresses) {
-      let amount = 10000;
+      let amount = 10000 * 50;
       if(token === 'WETH') {
-        amount = 10;
+        amount = 10 * 50;
       } else if (token === 'WBTC') {
-        amount = 1;
+        amount = 1 * 50;
       }
       await sendToken(token, owner, to, amount);
     }
