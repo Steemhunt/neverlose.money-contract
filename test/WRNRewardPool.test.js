@@ -379,4 +379,6 @@ contract('WRN Reward Pool Test', ([creator, alice, bob]) => {
     assert.equal((await this.wrnRewardPool.pendingWRN(this.hunt.address, { from: alice })).valueOf() / 1e18, 0.25);
     assert.equal((await this.wrnRewardPool.pendingWRN(this.hunt.address, { from: bob })).valueOf() / 1e18, 0.5625);
   });
+
+  // TODO: Reward calculation for Start & End, Bonus Start & End
 });

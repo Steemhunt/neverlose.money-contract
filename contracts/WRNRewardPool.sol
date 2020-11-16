@@ -51,7 +51,8 @@ contract WRNRewardPool is LockUpPool {
     // Total of 1M WRN tokens will be distributed for 4 years
     //  - 0.1 WRN per block by default
     //  - 0.5 WRN per block for beta users (early participants)
-    REWARD_START_BLOCK = block.number; // TODO: Set a future block on production
+    // REWARD_START_BLOCK = block.number; // TODO: Set a future block on production
+    REWARD_START_BLOCK = 11267272; // Estimated: 2020-11-16 15:15
     REWARD_PER_BLOCK = 1e17; // 0.1 WRN
     REWARD_END_BLOCK = REWARD_START_BLOCK.add(8800000); // 8.8M blocks (appx 4 years and 3 months)
 
@@ -132,7 +133,7 @@ contract WRNRewardPool is LockUpPool {
 
   // Return WRN per block over the given from to to block.
   function _getWRNPerBlock(uint256 from, uint256 to) private view returns (uint256) {
-    if (from > REWARD_END_BLOCK || from < REWARD_START_BLOCK) { // Reward pool finished
+    if (from > REWARD_END_BLOCK || to < REWARD_START_BLOCK) { // Reward pool finished
       return 0;
     } else if (to >= REWARD_END_BLOCK) { // Partial finished
       return REWARD_END_BLOCK.sub(from).mul(REWARD_PER_BLOCK);
