@@ -1,6 +1,6 @@
 const Migrations = artifacts.require("Migrations");
 
-module.exports = function (deployer, network, [creator]) {
+module.exports = async function (deployer, network, [creator]) {
   if (network === 'test') return;
 
   console.log(`Deploying from owner: ${creator}`);

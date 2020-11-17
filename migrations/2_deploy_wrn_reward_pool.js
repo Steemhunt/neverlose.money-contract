@@ -16,7 +16,8 @@ module.exports = async function (deployer, network, [creator]) {
     const weth = await deployProxy(ERC20Token, ['TEST Wrapped ETH', 'WETH', 18, toBN(10000)], { deployer, unsafeAllowCustomTypes: true });
     const wbtc = await deployProxy(ERC20Token, ['TEST Wrapped BTC', 'WBTC', 8, toBN(1000, 8)], { deployer, unsafeAllowCustomTypes: true });
 
-    const wrnRewardPool = await deployProxy(WRNRewardPool, [wrnToken.address], { deployer, unsafeAllowCustomTypes: true });
+    const block = await web3.eth.getBlock("latest");
+    const wrnRewardPool = await deployProxy(WRNRewardPool, [wrnToken.address, block.number], { deployer, unsafeAllowCustomTypes: true });
 
     await wrnToken.addMinter(wrnRewardPool.address, { from: creator });
 
@@ -35,8 +36,12 @@ module.exports = async function (deployer, network, [creator]) {
     const WETH_ADDRESS = '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2';
     const WBTC_ADDRESS = '0x2260fac5e5542a773aa44fbcfedf7c193bc2c599';
 
+    // Estimated target: Dec 01 2020 16:09:35 GMT+0900
+    // REF: http://etherscan.io/block/countdown/11367000
+    const REWARD_START_BLOCK = 11367000;
+
     const wrnToken = await deployProxy(ERC20Token, ['TEST WARREN', 'WRN', 18, toBN(0)], { deployer, unsafeAllowCustomTypes: true });
-    const wrnRewardPool = await deployProxy(WRNRewardPool, [wrnToken.address], { deployer, unsafeAllowCustomTypes: true });
+    const wrnRewardPool = await deployProxy(WRNRewardPool, [wrnToken.address, REWARD_START_BLOCK], { deployer, unsafeAllowCustomTypes: true });
     await wrnToken.addMinter(wrnRewardPool.address, { from: creator });
 
     // Almost No-Limit on lock-up

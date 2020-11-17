@@ -1,14 +1,16 @@
 const ERC20Token = artifacts.require('ERC20Token');
 const WRNRewardPool = artifacts.require('WRNRewardPool');
 const WRNRewardPoolV2Test = artifacts.require('WRNRewardPoolV2Test');
-const { expectRevert } = require('@openzeppelin/test-helpers');
+const { expectRevert, time } = require('@openzeppelin/test-helpers');
 const { deployProxy, upgradeProxy } = require('@openzeppelin/truffle-upgrades');
 
 contract('WRNRewardPoolV2Test with upgrades plugin', ([creator, alice]) => {
   beforeEach(async () => {
     this.wrn = await deployProxy(ERC20Token, ['TEST WARREN', 'WRN', 18, 1000], { unsafeAllowCustomTypes: true });
     this.hunt = await deployProxy(ERC20Token, ['TEST HUNT', 'HUNT', 18, 1000], { unsafeAllowCustomTypes: true });
-    this.wrnRewardPool = await deployProxy(WRNRewardPool, [this.wrn.address], { unsafeAllowCustomTypes: true });
+
+    const rewardStartBlock = String(await time.latestBlock().valueOf());
+    this.wrnRewardPool = await deployProxy(WRNRewardPool, [this.wrn.address, rewardStartBlock], { unsafeAllowCustomTypes: true });
 
     await this.wrn.addMinter(this.wrnRewardPool.address);
     await this.wrnRewardPool.addLockUpRewardPool(this.hunt.address, 2, 9999999999999, false);

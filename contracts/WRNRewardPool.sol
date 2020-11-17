@@ -40,7 +40,7 @@ contract WRNRewardPool is LockUpPool {
   event WRNMinted(address indexed tokenAddress, uint256 amount, uint256 timestamp);
   event WRNClaimed(address indexed tokenAddress, address indexed account, uint256 amount, uint256 timestamp);
 
-  function initialize(address WRNAddress) public initializer {
+  function initialize(address WRNAddress, uint256 rewardStartBlock) public initializer {
     LockUpPool.initialize();
 
     WRNToken = ERC20PresetMinterPauserUpgradeSafe(WRNAddress);
@@ -48,8 +48,7 @@ contract WRNRewardPool is LockUpPool {
     // Total of 1M WRN tokens will be distributed for 4 years
     //  - 0.1 WRN per block by default
     //  - 0.5 WRN per block for beta users (early participants)
-    REWARD_START_BLOCK = block.number; // TODO: Set a future block on production
-    // REWARD_START_BLOCK = 11267272; // Estimated: 2020-11-16 15:15
+    REWARD_START_BLOCK = rewardStartBlock;
     REWARD_PER_BLOCK = 1e17; // 0.1 WRN
     REWARD_END_BLOCK = REWARD_START_BLOCK.add(8800000); // 8.8M blocks (appx 4 years and 3 months)
 
