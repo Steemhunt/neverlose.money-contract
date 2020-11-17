@@ -62,6 +62,9 @@ contract LockUpPool is Initializable, OwnableUpgradeSafe {
   // Token => Account => UserLockUps
   mapping (address => mapping (address => UserLockUp)) public userLockUps;
 
+  // Fund address for platform fee conversion & WRN disrtribution
+  address public fundAddress;
+
   event LockedUp(address indexed token, address indexed account, uint256 amount, uint256 totalLockUp, uint256 durationInMonths, uint256 timestamp);
   event Exited(address indexed token, address indexed account, uint256 amount, uint256 refundAmount, uint256 penalty, uint256 fee, uint256 remainingTotal, uint256 durationInMonths, uint256 timestamp);
   event BonusClaimed(address indexed token, address indexed account, uint256 amount, uint256 timestamp);
@@ -92,6 +95,8 @@ contract LockUpPool is Initializable, OwnableUpgradeSafe {
     PLATFORM_FEE_RATE = 3;
     SECONDS_IN_MONTH = 3600; // For TEST: 1 month = 1 hour
     // SECONDS_IN_MONTH = 2592000; // TODO: Uncomment it on production
+
+    fundAddress = address(0x82CA6d313BffE56E9096b16633dfD414148D66b1);
   }
 
   modifier _checkPoolExists(address tokenAddress) {
@@ -247,8 +252,9 @@ contract LockUpPool is Initializable, OwnableUpgradeSafe {
 
     IERC20 token = IERC20(tokenAddress);
     token.safeTransfer(msg.sender, refundAmount);
-    token.safeTransfer(owner(), fee); // Platform fee
-
+    if (fee > 0) {
+      token.safeTransfer(fundAddress, fee); // Platform fee converted to HUNT and burned
+    }
     emit Exited(tokenAddress, msg.sender, lockUp.amount, refundAmount, penalty, fee, userLockUp.total, lockUp.durationInMonths, block.timestamp);
   }
 
@@ -313,6 +319,10 @@ contract LockUpPool is Initializable, OwnableUpgradeSafe {
     LockUp storage lockUp = userLockUps[tokenAddress][account].lockUps[lockUpId];
 
     return lockUp.unlockedAt.sub(lockUp.durationInMonths.mul(SECONDS_IN_MONTH));
+  }
+
+  function setFundAddress(address _fundAddress) external onlyOwner {
+    fundAddress = _fundAddress;
   }
 
   // Reserved storage space to allow for layout changes in the future.

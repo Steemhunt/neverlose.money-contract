@@ -299,12 +299,12 @@ contract('WRN Reward Pool Test', ([creator, alice, bob]) => {
     await this.wrnRewardPool.exit(this.hunt.address, 0, true, { from: alice });
 
     // LockUp pool test again
-    assert.equal((await this.hunt.balanceOf(alice, { from: alice })).valueOf() / 1e18, 487);
-    assert.equal((await this.hunt.balanceOf(creator, { from: creator })).valueOf() / 1e18, 1003);
-    assert.equal((await this.hunt.balanceOf(this.wrnRewardPool.address, { from: creator })).valueOf() / 1e18, 10); // Penalty should be remained on the contract
+    assert.equal((await this.hunt.balanceOf(alice)).valueOf() / 1e18, 487);
+    assert.equal((await this.hunt.balanceOf(await this.wrnRewardPool.fundAddress().valueOf())).valueOf() / 1e18, 3); // fund
+    assert.equal((await this.hunt.balanceOf(this.wrnRewardPool.address)).valueOf() / 1e18, 10); // Penalty should be remained on the contract
 
     assert.equal((await this.wrn.totalSupply()).valueOf() / 1e18, 0.5 + 0.5/9); // total minted
-    assert.equal((await this.wrn.balanceOf(creator)).valueOf() / 1e18, 0.5/9); // dev pool
+    assert.equal((await this.wrn.balanceOf(await this.wrnRewardPool.fundAddress().valueOf())).valueOf() / 1e18, 0.5/9); // fund
   });
 
   it('adding a reward pool in the middle of other pools WITH updates', async () => {

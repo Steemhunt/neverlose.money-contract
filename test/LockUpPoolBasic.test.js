@@ -132,7 +132,7 @@ contract('Basic contract functionality', ([creator, alice]) => {
     await this.lockUpPool.exit(this.hunt.address, 0, true, { from: alice });
 
     assert.equal((await this.hunt.balanceOf(alice)).valueOf(), 8700);
-    assert.equal((await this.hunt.balanceOf(creator)).valueOf(), 300); // platform fee
+    assert.equal((await this.hunt.balanceOf(await this.lockUpPool.fundAddress().valueOf())).valueOf(), 300); // platform fee
 
     const [
       durationInMonths,

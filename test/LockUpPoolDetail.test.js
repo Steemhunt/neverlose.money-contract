@@ -56,8 +56,8 @@ contract('LockUp and Exit', ([creator, alice, bob, carol]) => {
     assert.equal(totalLockUp1.valueOf(), toBN(1000));
     assert.equal(effectiveTotalLockUp1.valueOf(), toBN(1000));
 
-    assert.equal((await this.hunt.balanceOf(creator, { from: creator })).valueOf(), toBN(7030)); // 3% platform fee should go to the contract owner (original balance: 8000)
-    assert.equal((await this.hunt.balanceOf(alice, { from: alice })).valueOf(), toBN(870)); // 10% penalty + 3% platform fees are deducted
+    assert.equal((await this.hunt.balanceOf(await this.lockUpPool.fundAddress().valueOf())).valueOf(), toBN(30)); // 3% platform fee should go to the fund
+    assert.equal((await this.hunt.balanceOf(alice)).valueOf(), toBN(870)); // 10% penalty + 3% platform fees are deducted
     assert.equal(totalPenalty, toBN(100));
     assert.equal(totalPlatformFee, toBN(30));
   });
@@ -82,7 +82,7 @@ contract('LockUp and Exit', ([creator, alice, bob, carol]) => {
     await this.lockUpPool.doLockUp(this.hunt.address, toBN(1000), 12, { from: alice }); // duration boost: 4x - 4000
     // Force Exit!
     await this.lockUpPool.exit(this.hunt.address, 0, true, { from: creator });
-    // will increase creator balance by 870 (13% cut) + 30 (3% platform fee)
+    // will increase fund balance by 870 (13% cut)
 
     // Penalty: 100 -> Effective Balance: creator - 0 / alice - 1000
     assert.equal((await this.lockUpPool.earnedBonus(this.hunt.address, { from: creator })).valueOf(), 0);
@@ -91,8 +91,9 @@ contract('LockUp and Exit', ([creator, alice, bob, carol]) => {
     await this.lockUpPool.claimBonus(this.hunt.address, { from: creator }); // should claim 0
     await this.lockUpPool.claimBonus(this.hunt.address, { from: alice }); // should claim 100
 
-    assert.equal((await this.hunt.balanceOf(creator, { from: creator })).valueOf(), toBN(7900)); // 7000 + 870 + 30
-    assert.equal((await this.hunt.balanceOf(alice, { from: alice })).valueOf(), toBN(100)); // 1000 is still locked
+    assert.equal((await this.hunt.balanceOf(creator)).valueOf(), toBN(7870)); // 7000 + 870
+    assert.equal((await this.hunt.balanceOf(alice)).valueOf(), toBN(100)); // 1000 is still locked
+    assert.equal((await this.hunt.balanceOf(await this.lockUpPool.fundAddress().valueOf())).valueOf(), toBN(30)); // platform fee: 30
 
     // Force Exit!
     await this.lockUpPool.exit(this.hunt.address, 0, true, { from: alice });
@@ -207,7 +208,7 @@ contract('LockUp and Exit', ([creator, alice, bob, carol]) => {
     assert.equal((await this.lockUpPool.earnedBonus(this.hunt.address, { from: alice })).valueOf() / 1e18, 25);
     assert.equal(((await this.lockUpPool.earnedBonus(this.hunt.address, { from: bob })).valueOf() / 1e18).toFixed(5), '3.57143');
 
-    assert.equal((await this.hunt.balanceOf(creator)).valueOf(), toBN(6030)); // platform fee
+    assert.equal((await this.hunt.balanceOf(await this.lockUpPool.fundAddress().valueOf())).valueOf(), toBN(30)); // platform fee
 
     await this.lockUpPool.exit(this.hunt.address, 1, true, { from: carol }); // Force Exit! - penalty: 100
 
@@ -217,7 +218,7 @@ contract('LockUp and Exit', ([creator, alice, bob, carol]) => {
     assert.equal((await this.lockUpPool.earnedBonus(this.hunt.address, { from: alice })).valueOf() / 1e18, 112.5); // 25 + 87.5
     assert.equal(((await this.lockUpPool.earnedBonus(this.hunt.address, { from: bob })).valueOf() / 1e18).toFixed(5), '16.07143'); // 3.5714285714 + 12.5
 
-    assert.equal((await this.hunt.balanceOf(creator)).valueOf(), toBN(6060)); // platform fee
+    assert.equal((await this.hunt.balanceOf(await this.lockUpPool.fundAddress().valueOf())).valueOf(), toBN(60)); // platform fee
 
     assert.equal(((await this.hunt.balanceOf(carol)).valueOf() / 1e18).toFixed(5), '1811.42857'); // 2000 - 130 + 71.4285714286 - 130
   });

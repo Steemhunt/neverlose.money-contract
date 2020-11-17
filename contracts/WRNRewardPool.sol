@@ -36,9 +36,6 @@ contract WRNRewardPool is LockUpPool {
   // Token => Account => UserWRNReward
   mapping (address => mapping (address => UserWRNReward)) public userWRNRewards;
 
-  // Dev address for WRN disrtribution
-  address public devAddress;
-
   event PoolAdded(address indexed tokenAddress, uint256 multiplier, uint256 timestamp);
   event WRNMinted(address indexed tokenAddress, uint256 amount, uint256 timestamp);
   event WRNClaimed(address indexed tokenAddress, address indexed account, uint256 amount, uint256 timestamp);
@@ -51,16 +48,14 @@ contract WRNRewardPool is LockUpPool {
     // Total of 1M WRN tokens will be distributed for 4 years
     //  - 0.1 WRN per block by default
     //  - 0.5 WRN per block for beta users (early participants)
-    // REWARD_START_BLOCK = block.number; // TODO: Set a future block on production
-    REWARD_START_BLOCK = 11267272; // Estimated: 2020-11-16 15:15
+    REWARD_START_BLOCK = block.number; // TODO: Set a future block on production
+    // REWARD_START_BLOCK = 11267272; // Estimated: 2020-11-16 15:15
     REWARD_PER_BLOCK = 1e17; // 0.1 WRN
     REWARD_END_BLOCK = REWARD_START_BLOCK.add(8800000); // 8.8M blocks (appx 4 years and 3 months)
 
     // 5x distribution for the first 500k blocks (appx 3 months)
     REWARD_EARLY_BONUS_END_BLOCK = REWARD_START_BLOCK.add(500000);
     REWARD_EARLY_BONUS_BOOST = 5;
-
-    devAddress = msg.sender;
   }
 
   // MARK: - Overiiding LockUpPool
@@ -167,7 +162,7 @@ contract WRNRewardPool is LockUpPool {
     uint256 wrnToMint = _getAccWRNTillNow(tokenAddress);
 
     if (wrnStat.lastRewardBlock != 0 && tokenStat.effectiveTotalLockUp > 0 && wrnToMint > 0) {
-      WRNToken.mint(devAddress, wrnToMint.div(9)); // 10% dev pool (120,000 / (1,080,000 + 120,000) = 10%)
+      WRNToken.mint(fundAddress, wrnToMint.div(9)); // 10% dev pool (120,000 / (1,080,000 + 120,000) = 10%)
       WRNToken.mint(address(this), wrnToMint);
       wrnStat.accWRNPerShare = wrnStat.accWRNPerShare.add(
         wrnToMint.mul(1e18).div(tokenStat.effectiveTotalLockUp)
@@ -223,10 +218,6 @@ contract WRNRewardPool is LockUpPool {
     WRNToken.safeTransfer(msg.sender, amount);
 
     emit WRNClaimed(tokenAddress, msg.sender, amount, block.timestamp);
-  }
-
-  function setDevAddress(address _devAddress) external onlyOwner {
-    devAddress = _devAddress;
   }
 
   // Reserved storage space to allow for layout changes in the future.
