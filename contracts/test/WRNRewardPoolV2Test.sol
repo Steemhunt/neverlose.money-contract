@@ -49,7 +49,7 @@ contract WRNRewardPoolV2Test is LockUpPool {
   // V2: Added
   uint256 public varAdded;
 
-  function initialize(address WRNAddress, uint256 rewardStartBlock) public initializer {
+  function initialize(address WRNAddress, uint256 rewardStartBlock, uint256 rewardBlocks, uint256 bonusBlocks) public initializer {
     LockUpPool.initialize();
 
     WRNToken = ERC20PresetMinterPauserUpgradeSafe(WRNAddress);
@@ -59,10 +59,10 @@ contract WRNRewardPoolV2Test is LockUpPool {
     //  - 0.5 WRN per block for beta users (early participants)
     REWARD_START_BLOCK = rewardStartBlock;
     REWARD_PER_BLOCK = 1e17; // 0.1 WRN
-    REWARD_END_BLOCK = REWARD_START_BLOCK.add(8800000); // 8.8M blocks (appx 4 years and 3 months)
+    REWARD_END_BLOCK = REWARD_START_BLOCK.add(rewardBlocks); // 8.8M blocks (appx 4 years and 3 months)
 
     // 5x distribution for the first 500k blocks (appx 3 months)
-    REWARD_EARLY_BONUS_END_BLOCK = REWARD_START_BLOCK.add(500000);
+    REWARD_EARLY_BONUS_END_BLOCK = REWARD_START_BLOCK.add(bonusBlocks);
     REWARD_EARLY_BONUS_BOOST = 5;
   }
 
@@ -142,10 +142,12 @@ contract WRNRewardPoolV2Test is LockUpPool {
 
   // Return WRN per block over the given from to to block.
   function _getWRNPerBlock(uint256 from, uint256 to) private view returns (uint256) {
-    if (from > REWARD_END_BLOCK || to < REWARD_START_BLOCK) { // Reward pool finished
+    if (from > REWARD_END_BLOCK || to < REWARD_START_BLOCK) { // Reward finished
       return 0;
+    } else if (from < REWARD_START_BLOCK && to >= REWARD_START_BLOCK) { // partial started
+      return to.sub(REWARD_START_BLOCK).mul(REWARD_EARLY_BONUS_BOOST).mul(REWARD_PER_BLOCK); // it will always be in bonus period
     } else if (to >= REWARD_END_BLOCK) { // Partial finished
-      return REWARD_END_BLOCK.sub(from).mul(REWARD_PER_BLOCK);
+      return REWARD_END_BLOCK.sub(from).mul(REWARD_PER_BLOCK); // it will always be in out of bonus period
     } else if (to <= REWARD_EARLY_BONUS_END_BLOCK) { // Bonus period
       return to.sub(from).mul(REWARD_EARLY_BONUS_BOOST).mul(REWARD_PER_BLOCK);
     } else if (from >= REWARD_EARLY_BONUS_END_BLOCK) { // Bonus finished

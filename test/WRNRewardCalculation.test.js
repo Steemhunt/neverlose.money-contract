@@ -18,7 +18,7 @@ contract('WRN reward calculation in detail', ([creator]) => {
   it('should not give any WRN reward before start block', async () => {
     // Reward start from +10 blocks
     this.wrnRewardPool = await WRNRewardPool.new();
-    this.wrnRewardPool.initialize(this.wrn.address, parseInt(await time.latestBlock().valueOf()) + 10);
+    this.wrnRewardPool.initialize(this.wrn.address, parseInt(await time.latestBlock().valueOf()) + 10, 9999, 9999);
     await this.wrn.addMinter(this.wrnRewardPool.address);
     await this.wrnRewardPool.addLockUpRewardPool(this.hunt.address, 2, 9999999999999, false);
     await this.hunt.approve(this.wrnRewardPool.address, 9999999999999);
@@ -35,7 +35,7 @@ contract('WRN reward calculation in detail', ([creator]) => {
     // Reward start from +10 blocks
     this.wrnRewardPool = await WRNRewardPool.new();
     const startBlock = parseInt(await time.latestBlock().valueOf()) + 7;
-    this.wrnRewardPool.initialize(this.wrn.address, startBlock);
+    this.wrnRewardPool.initialize(this.wrn.address, startBlock, 9999, 9999);
     await this.wrn.addMinter(this.wrnRewardPool.address); // +1
     await this.wrnRewardPool.addLockUpRewardPool(this.hunt.address, 2, 9999999999999, false); // +2
     await this.hunt.approve(this.wrnRewardPool.address, 9999999999999); // +3

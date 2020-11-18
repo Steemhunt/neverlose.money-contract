@@ -17,7 +17,7 @@ module.exports = async function (deployer, network, [creator]) {
     const wbtc = await deployProxy(ERC20Token, ['TEST Wrapped BTC', 'WBTC', 8, toBN(1000, 8)], { deployer, unsafeAllowCustomTypes: true });
 
     const block = await web3.eth.getBlock("latest");
-    const wrnRewardPool = await deployProxy(WRNRewardPool, [wrnToken.address, block.number], { deployer, unsafeAllowCustomTypes: true });
+    const wrnRewardPool = await deployProxy(WRNRewardPool, [wrnToken.address, block.number, 8800000, 500000], { deployer, unsafeAllowCustomTypes: true });
 
     await wrnToken.addMinter(wrnRewardPool.address, { from: creator });
 
@@ -41,7 +41,7 @@ module.exports = async function (deployer, network, [creator]) {
     const REWARD_START_BLOCK = 11367000;
 
     const wrnToken = await deployProxy(ERC20Token, ['TEST WARREN', 'WRN', 18, toBN(0)], { deployer, unsafeAllowCustomTypes: true });
-    const wrnRewardPool = await deployProxy(WRNRewardPool, [wrnToken.address, REWARD_START_BLOCK], { deployer, unsafeAllowCustomTypes: true });
+    const wrnRewardPool = await deployProxy(WRNRewardPool, [wrnToken.address, REWARD_START_BLOCK, 8800000, 500000], { deployer, unsafeAllowCustomTypes: true });
     await wrnToken.addMinter(wrnRewardPool.address, { from: creator });
 
     // Almost No-Limit on lock-up

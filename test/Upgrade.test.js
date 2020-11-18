@@ -10,7 +10,7 @@ contract('WRNRewardPoolV2Test with upgrades plugin', ([creator, alice]) => {
     this.hunt = await deployProxy(ERC20Token, ['TEST HUNT', 'HUNT', 18, 1000], { unsafeAllowCustomTypes: true });
 
     const rewardStartBlock = String(await time.latestBlock().valueOf());
-    this.wrnRewardPool = await deployProxy(WRNRewardPool, [this.wrn.address, rewardStartBlock], { unsafeAllowCustomTypes: true });
+    this.wrnRewardPool = await deployProxy(WRNRewardPool, [this.wrn.address, rewardStartBlock, 8800000, 500000], { unsafeAllowCustomTypes: true });
 
     await this.wrn.addMinter(this.wrnRewardPool.address);
     await this.wrnRewardPool.addLockUpRewardPool(this.hunt.address, 2, 9999999999999, false);
