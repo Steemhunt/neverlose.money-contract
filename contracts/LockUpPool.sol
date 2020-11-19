@@ -32,6 +32,7 @@ contract LockUpPool is Initializable, OwnableUpgradeSafe {
   struct UserLockUp {
     uint256 total;
     uint256 effectiveTotal;
+    uint256 accTotal; // info
     uint256 bonusClaimed; // info
     uint256 bonusDebt;
     uint40 lockedUpCount; // accumulative lock-up count (= length of lockUps)
@@ -173,6 +174,7 @@ contract LockUpPool is Initializable, OwnableUpgradeSafe {
 
     // Update user lockUp stats
     userLockUp.total = userLockUp.total.add(amount);
+    userLockUp.accTotal = userLockUp.accTotal.add(amount);
     userLockUp.effectiveTotal = userLockUp.effectiveTotal.add(effectiveAmount);
     userLockUp.lockedUpCount = userLockUp.lockedUpCount + 1;
 
