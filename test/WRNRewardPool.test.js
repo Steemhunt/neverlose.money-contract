@@ -51,7 +51,7 @@ contract('WRN Reward Pool Test', ([creator, alice, bob]) => {
     await this.wrnRewardPool.setEmergencyMode(true);
     await expectRevert(
       this.wrnRewardPool.doLockUp(this.hunt.address, 1000, 3),
-      'not allowed during emergency mode is on'
+      'NOT_ALLOWED_IN_EMERGENCY'
     );
   });
 
@@ -59,7 +59,7 @@ contract('WRN Reward Pool Test', ([creator, alice, bob]) => {
     this.eth = await ERC20Token.new({ from: creator });
     await this.eth.initialize('Ethereum', 'ETH', 18, toBN(1000));
 
-    await expectRevert(this.wrnRewardPool.updatePool(this.eth.address), 'token pool does not exist');
+    await expectRevert(this.wrnRewardPool.updatePool(this.eth.address), 'POOL_NOT_FOUND');
   });
 
   it('should not have any pending WRN for non-existing pool', async () => {
@@ -179,7 +179,7 @@ contract('WRN Reward Pool Test', ([creator, alice, bob]) => {
   it('should fail on updating to a smaller multiplier without updating all pool', async () => {
     await expectRevert(
       this.wrnRewardPool.updatePoolMultiplier(this.hunt.address, 1, false),
-      'cannot update to a smaller value without updating all pools'
+      'UPDATE_ALL_REQUIRED'
     );
   });
 

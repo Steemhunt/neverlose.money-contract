@@ -13,14 +13,14 @@ contract LockUpPool is Initializable, OwnableUpgradeSafe {
   using SafeERC20 for IERC20;
 
   // NOTE: didn't use actual constant variable just in case we may chage it on upgrades
-  uint256 public PENALTY_RATE;
-  uint256 public PLATFORM_FEE_RATE;
-  uint256 public SECONDS_IN_MONTH;
+  uint8 public PENALTY_RATE;
+  uint8 public PLATFORM_FEE_RATE;
+  uint24 public SECONDS_IN_MONTH;
 
   bool public emergencyMode;
 
   struct LockUp {
-    uint256 durationInMonths;
+    uint8 durationInMonths;
     uint256 unlockedAt; // NOTE: Potential block time manipulation by miners
     uint256 amount;
     uint256 effectiveAmount; // amount * durationBoost
@@ -32,9 +32,9 @@ contract LockUpPool is Initializable, OwnableUpgradeSafe {
   struct UserLockUp {
     uint256 total;
     uint256 effectiveTotal;
-    uint256 bonusClaimed; // only used for tracking
+    uint256 bonusClaimed; // info
     uint256 bonusDebt;
-    uint256 lockedUpCount; // accumulative lock-up count (= length of lockUps)
+    uint40 lockedUpCount; // accumulative lock-up count (= length of lockUps)
     LockUp[] lockUps;
   }
 
@@ -47,10 +47,10 @@ contract LockUpPool is Initializable, OwnableUpgradeSafe {
     uint256 totalClaimed; // info
     uint256 accBonusPerShare; // Others' Penalty = My Bonus
     uint256 accTotalLockUp; // info
-    uint256 accLockUpCount; // info
-    uint256 activeLockUpCount; // info
-    uint256 unlockedCount; // info
-    uint256 brokenCount; // info
+    uint40 accLockUpCount; // info
+    uint40 activeLockUpCount; // info
+    uint40 unlockedCount; // info
+    uint40 brokenCount; // info
   }
 
   // Token => TokenStats
@@ -100,19 +100,19 @@ contract LockUpPool is Initializable, OwnableUpgradeSafe {
   }
 
   modifier _checkPoolExists(address tokenAddress) {
-    require(tokenStats[tokenAddress].maxLockUpLimit > 0, 'token pool does not exist');
+    require(tokenStats[tokenAddress].maxLockUpLimit > 0, 'POOL_NOT_FOUND');
     _;
   }
 
   modifier _checkEmergencyMode() {
-    require(!emergencyMode, 'not allowed during emergency mode is on');
+    require(!emergencyMode, 'NOT_ALLOWED_IN_EMERGENCY');
     _;
   }
 
   // Should be called on WRNRewardPool#addLockUpRewardPool
   function addLockUpPool(address tokenAddress, uint256 maxLockUpLimit) public onlyOwner {
-    require(tokenAddress.isContract(), 'tokeanAddress is not a contract');
-    require(tokenStats[tokenAddress].maxLockUpLimit == 0, 'pool already exists');
+    require(tokenAddress.isContract(), 'INVALID_TOKEN');
+    require(tokenStats[tokenAddress].maxLockUpLimit == 0, 'POOL_ALREADY_EXISTS');
 
     pools.push(tokenAddress);
     tokenStats[tokenAddress].maxLockUpLimit = maxLockUpLimit;
@@ -135,34 +135,34 @@ contract LockUpPool is Initializable, OwnableUpgradeSafe {
     return durationBoost;
   }
 
-  function doLockUp(address tokenAddress, uint256 amount, uint256 durationInMonths) public virtual _checkPoolExists(tokenAddress) _checkEmergencyMode {
-    require(amount > 0, 'lock up amount must be greater than 0');
-    require(durationInMonths >= 3 && durationInMonths <= 120, 'duration must be between 3 and 120 inclusive');
+  function doLockUp(address tokenAddress, uint256 amount, uint8 durationInMonths) public virtual _checkPoolExists(tokenAddress) _checkEmergencyMode {
+    require(amount > 0, 'INVALID_AMOUNT');
+    require(durationInMonths >= 3 && durationInMonths <= 120, 'INVALID_DURATION');
 
     IERC20 token = IERC20(tokenAddress);
-
-    require(token.balanceOf(msg.sender) >= amount, 'not enough balance');
-    require(token.allowance(msg.sender, address(this)) >= amount, 'not enough allowance');
 
     UserLockUp storage userLockUp = userLockUps[tokenAddress][msg.sender];
     TokenStats storage tokenStat = tokenStats[tokenAddress];
 
     // Max lock-up amount is restricted during the beta period
-    if (tokenStat.maxLockUpLimit < userLockUp.total.add(amount)) {
-      revert('max limit exceeded for this pool');
+    if (tokenStat.maxLockUpLimit < userLockUp.total + amount) {
+      revert('MAX_LIMIT_EXCEEDED');
     }
+
+    // NOTE: Remove duplicated checks
+    // require(token.balanceOf(msg.sender) >= amount, 'NOT_ENOUGH_BALANCE');
+    // require(token.allowance(msg.sender, address(this)) >= amount, 'NOT_ENOUGH_ALLOWANCE');
+    token.safeTransferFrom(msg.sender, address(this), amount);
 
     // Should claim bonus before exit, otherwise `earnedBonus` will become zero afterwards
     claimBonus(tokenAddress);
-
-    token.safeTransferFrom(msg.sender, address(this), amount);
 
     // Add LockUp
     uint256 effectiveAmount = amount.mul(_durationBoost(durationInMonths));
     userLockUp.lockUps.push(
       LockUp(
         durationInMonths,
-        block.timestamp.add(durationInMonths.mul(SECONDS_IN_MONTH)), // unlockedAt
+        block.timestamp.add(durationInMonths * SECONDS_IN_MONTH), // unlockedAt
         amount,
         effectiveAmount,
         0, // exitedAt
@@ -174,13 +174,13 @@ contract LockUpPool is Initializable, OwnableUpgradeSafe {
     // Update user lockUp stats
     userLockUp.total = userLockUp.total.add(amount);
     userLockUp.effectiveTotal = userLockUp.effectiveTotal.add(effectiveAmount);
-    userLockUp.lockedUpCount = userLockUp.lockedUpCount.add(1);
+    userLockUp.lockedUpCount = userLockUp.lockedUpCount + 1;
 
     // Update TokenStats
     tokenStat.totalLockUp = tokenStat.totalLockUp.add(amount);
     tokenStat.accTotalLockUp = tokenStat.accTotalLockUp.add(amount);
-    tokenStat.accLockUpCount = tokenStat.accLockUpCount.add(1);
-    tokenStat.activeLockUpCount = tokenStat.activeLockUpCount.add(1);
+    tokenStat.accLockUpCount = tokenStat.accLockUpCount + 1;
+    tokenStat.activeLockUpCount = tokenStat.activeLockUpCount + 1;
     tokenStat.effectiveTotalLockUp = tokenStat.effectiveTotalLockUp.add(effectiveAmount);
 
     _updateBonusDebt(tokenAddress, msg.sender);
@@ -198,8 +198,8 @@ contract LockUpPool is Initializable, OwnableUpgradeSafe {
     UserLockUp storage userLockUp = userLockUps[tokenAddress][msg.sender];
     LockUp storage lockUp = userLockUp.lockUps[lockUpId];
 
-    require(lockUp.exitedAt == 0, 'already exited');
-    require(force || block.timestamp >= lockUp.unlockedAt, 'has not unlocked yet');
+    require(lockUp.exitedAt == 0, 'ALREADY_EXITED');
+    require(force || block.timestamp >= lockUp.unlockedAt, 'MUST_BE_FORCED');
 
     // Should claim bonus before exit, otherwise `earnedBonus` will become zero afterwards
     claimBonus(tokenAddress);
@@ -213,7 +213,7 @@ contract LockUpPool is Initializable, OwnableUpgradeSafe {
       fee = lockUp.amount.mul(PLATFORM_FEE_RATE).div(100);
       // revert(string(abi.encodePacked(penalty, '+', fee)));
     } else if (force) {
-      revert('force not necessary');
+      revert('MUST_NOT_BE_FORCED');
     }
 
     uint256 refundAmount = lockUp.amount.sub(penalty).sub(fee);
@@ -230,11 +230,11 @@ contract LockUpPool is Initializable, OwnableUpgradeSafe {
     tokenStat.totalPenalty = tokenStat.totalPenalty.add(penalty);
     tokenStat.totalPlatformFee = tokenStat.totalPlatformFee.add(fee);
 
-    tokenStat.activeLockUpCount = tokenStat.activeLockUpCount.sub(1);
+    tokenStat.activeLockUpCount = tokenStat.activeLockUpCount - 1;
     if (penalty > 0) {
-      tokenStat.brokenCount = tokenStat.brokenCount.add(1);
+      tokenStat.brokenCount = tokenStat.brokenCount + 1;
     } else {
-      tokenStat.unlockedCount = tokenStat.unlockedCount.add(1);
+      tokenStat.unlockedCount = tokenStat.unlockedCount + 1;
     }
 
     // Update user lockUp stats
@@ -318,7 +318,7 @@ contract LockUpPool is Initializable, OwnableUpgradeSafe {
   function lockedUpAt(address tokenAddress, address account, uint256 lockUpId) external view returns (uint256) {
     LockUp storage lockUp = userLockUps[tokenAddress][account].lockUps[lockUpId];
 
-    return lockUp.unlockedAt.sub(lockUp.durationInMonths.mul(SECONDS_IN_MONTH));
+    return lockUp.unlockedAt.sub(lockUp.durationInMonths * SECONDS_IN_MONTH);
   }
 
   function setFundAddress(address _fundAddress) external onlyOwner {
