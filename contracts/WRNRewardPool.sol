@@ -41,6 +41,8 @@ contract WRNRewardPool is LockUpPool {
   event WRNClaimed(address indexed tokenAddress, address indexed account, uint256 amount, uint256 timestamp);
 
   function initialize(address WRNAddress, uint256 rewardStartBlock, uint256 rewardBlocks, uint256 bonusBlocks) public initializer {
+    require(bonusBlocks <= rewardBlocks, 'invalid parameters');
+
     LockUpPool.initialize();
 
     WRNToken = ERC20PresetMinterPauserUpgradeSafe(WRNAddress);
