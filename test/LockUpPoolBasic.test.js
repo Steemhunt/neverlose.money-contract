@@ -38,7 +38,7 @@ contract('Basic contract functionality', ([creator, alice]) => {
 
   it('should fail on invalid token address', async () => {
     this.wbtc = await ERC20Token.new({ from: creator });
-    this.wbtc.initialize('Wrapped BTC', 'wBTC', 8, 10000);
+    await this.wbtc.initialize('Wrapped BTC', 'wBTC', 8, 10000);
 
     await this.hunt.approve(this.lockUpPool.address, 1000, { from: creator });
     await expectRevert(this.lockUpPool.doLockUp(this.wbtc.address, 1000, 9, { from: creator }), 'token pool does not exist');

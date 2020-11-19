@@ -127,20 +127,24 @@ contract WRNRewardPool is LockUpPool {
 
   // Return WRN per block over the given from to to block.
   function _getWRNPerBlock(uint256 from, uint256 to) private view returns (uint256) {
-    if (from > REWARD_END_BLOCK || to < REWARD_START_BLOCK) { // Reward finished
+    if (to < REWARD_START_BLOCK || from > REWARD_END_BLOCK) { // Reward not started or finished
       return 0;
-    } else if (from < REWARD_START_BLOCK && to >= REWARD_START_BLOCK) { // partial started
-      return to.sub(REWARD_START_BLOCK).mul(REWARD_EARLY_BONUS_BOOST).mul(REWARD_PER_BLOCK); // it will always be in bonus period
-    } else if (to >= REWARD_END_BLOCK) { // Partial finished
-      return REWARD_END_BLOCK.sub(from).mul(REWARD_PER_BLOCK); // it will always be in out of bonus period
-    } else if (to <= REWARD_EARLY_BONUS_END_BLOCK) { // Bonus period
+    }
+    if (from < REWARD_START_BLOCK) {
+      from = REWARD_START_BLOCK;
+    }
+    if (to > REWARD_END_BLOCK) {
+      to = REWARD_END_BLOCK;
+    }
+
+    if (to <= REWARD_EARLY_BONUS_END_BLOCK) { // Bonus period
       return to.sub(from).mul(REWARD_EARLY_BONUS_BOOST).mul(REWARD_PER_BLOCK);
-    } else if (from >= REWARD_EARLY_BONUS_END_BLOCK) { // Bonus finished
-      return to.sub(from).mul(REWARD_PER_BLOCK);
-    } else { // Partial bonus period
+    } else if (from <= REWARD_EARLY_BONUS_END_BLOCK && to > REWARD_EARLY_BONUS_END_BLOCK) { // Partial bonus period
       return REWARD_EARLY_BONUS_END_BLOCK.sub(from).mul(REWARD_EARLY_BONUS_BOOST).mul(REWARD_PER_BLOCK).add(
         to.sub(REWARD_EARLY_BONUS_END_BLOCK).mul(REWARD_PER_BLOCK)
       );
+    } else { // After bonus period (from > REWARD_EARLY_BONUS_END_BLOCK)
+      return to.sub(from).mul(REWARD_PER_BLOCK);
     }
   }
 
