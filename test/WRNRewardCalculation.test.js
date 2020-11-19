@@ -60,7 +60,29 @@ contract('WRN reward calculation in detail', ([creator]) => {
     assert.equal(await this.wrnRewardPool.pendingWRN(this.hunt.address).valueOf() / 1e18, 0.5); // 1 block reward
   });
 
-  // Partial finished: to > END
+  // Finished: from > END
+  it('should not give WRN after the end block', async () => {
+    const startBlock = 0;
+    const rewardBlocks = 5;
+    const bonusBlocks = 2;
+    await initializeRewardPool(this, startBlock, rewardBlocks, bonusBlocks); // block: +4
+    await this.wrnRewardPool.doLockUp(this.hunt.address, 100, 3); // +5
+    await time.advanceBlock(); // +6
+    assert.equal(await this.wrnRewardPool.pendingWRN(this.hunt.address).valueOf() / 1e18, 0);
+  });
+
+  // Bonus finished: from > BONUS_END
+  it('should not give WRN after the end block', async () => {
+    const startBlock = 0;
+    const rewardBlocks = 10;
+    const bonusBlocks = 2;
+    await initializeRewardPool(this, startBlock, rewardBlocks, bonusBlocks); // block: +4
+    await this.wrnRewardPool.doLockUp(this.hunt.address, 100, 3); // +5
+    await time.advanceBlock(); // +6
+    assert.equal(await this.wrnRewardPool.pendingWRN(this.hunt.address).valueOf() / 1e18, 0.1);
+  });
+
+  // Partial bonus finished + Partial finished: from < BONUS_END < to < END
   it('should not give WRN after the end block', async () => {
     const startBlock = 0;
     const rewardBlocks = 12;
@@ -80,12 +102,4 @@ contract('WRN reward calculation in detail', ([creator]) => {
     // Reward = (8-5) * 0.5 + (12-8) * 0.1 + (20-12) * 0 = 1.2
     assert.equal(await this.wrnRewardPool.pendingWRN(this.hunt.address).valueOf() / 1e18, 1.9);
   });
-
-  // TODO: Finished: from > END
-
-  // TODO: Bonus: to < BONUS_END
-
-  // TODO: Bonus partial finished: from <= BONUS_END && to > BONUS_END
-
-  // TODO: Bonus finished: from > BONUS_END
 });
