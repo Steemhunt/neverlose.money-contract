@@ -34,7 +34,7 @@ contract LockUpPool is Initializable, OwnableUpgradeSafe {
     uint256 effectiveTotal;
     uint256 bonusClaimed; // only used for tracking
     uint256 bonusDebt;
-    uint256 lockedUpCount; // accumulative lock-up count
+    uint256 lockedUpCount; // accumulative lock-up count (= length of lockUps)
     LockUp[] lockUps;
   }
 
