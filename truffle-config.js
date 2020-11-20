@@ -50,8 +50,8 @@ module.exports = {
     reporter: 'eth-gas-reporter',
     reporterOptions : {
       currency: 'USD',
-      coinmarketcap: '793664cd-7f8f-470f-867b-9de05f7d411d'
-      // gasPrice: 25
+      coinmarketcap: '793664cd-7f8f-470f-867b-9de05f7d411d',
+      gasPrice: 25
     }
   },
   api_keys: {

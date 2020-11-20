@@ -238,6 +238,11 @@ contract WRNRewardPoolV2Test is LockUpPool {
     emit WRNClaimed(tokenAddress, msg.sender, amount, block.timestamp);
   }
 
+  function claimWRNandBonus(address tokenAddress) external {
+    claimWRN(tokenAddress);
+    claimBonus(tokenAddress);
+  }
+
   // V2: Changed from 50 -> 49
   uint256[49] private ______gap;
 }

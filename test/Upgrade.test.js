@@ -1,8 +1,8 @@
-const ERC20Token = artifacts.require('ERC20Token');
+ const ERC20Token = artifacts.require('ERC20Token');
 const WRNRewardPool = artifacts.require('WRNRewardPool');
 const WRNRewardPoolV2Test = artifacts.require('WRNRewardPoolV2Test');
 const { expectRevert, time } = require('@openzeppelin/test-helpers');
-const { deployProxy, upgradeProxy } = require('@openzeppelin/truffle-upgrades');
+const { deployProxy, upgradeProxy, admin } = require('@openzeppelin/truffle-upgrades');
 
 contract('WRNRewardPoolV2Test with upgrades plugin', ([creator, alice]) => {
   beforeEach(async () => {
@@ -15,15 +15,15 @@ contract('WRNRewardPoolV2Test with upgrades plugin', ([creator, alice]) => {
     await this.wrn.addMinter(this.wrnRewardPool.address);
     await this.wrnRewardPool.addLockUpRewardPool(this.hunt.address, 2, 9999999999999, false);
     await this.hunt.approve(this.wrnRewardPool.address, 9999999999999);
-
-    this.wrnRewardPoolV2 = await upgradeProxy(this.wrnRewardPool.address, WRNRewardPoolV2Test, { unsafeAllowCustomTypes: true });
   });
 
   it('should have the same proxy address', async () => {
+    this.wrnRewardPoolV2 = await upgradeProxy(this.wrnRewardPool.address, WRNRewardPoolV2Test, { unsafeAllowCustomTypes: true });
     assert.equal(this.wrnRewardPool.address, this.wrnRewardPoolV2.address);
   });
 
   it('should disable exit function', async () => {
+    this.wrnRewardPoolV2 = await upgradeProxy(this.wrnRewardPool.address, WRNRewardPoolV2Test, { unsafeAllowCustomTypes: true });
     await expectRevert(
       this.wrnRewardPool.exit(this.hunt.address, 0, true), // Should be able to call with the same proxy contract
       'disabled'
@@ -31,7 +31,19 @@ contract('WRNRewardPoolV2Test with upgrades plugin', ([creator, alice]) => {
   });
 
   it('should have a new extended variable', async () => {
+    this.wrnRewardPoolV2 = await upgradeProxy(this.wrnRewardPool.address, WRNRewardPoolV2Test, { unsafeAllowCustomTypes: true });
     await this.wrnRewardPoolV2.setVarAdded(1234); // Should call with the new V2 contract because this function is added (ABI is changed)
     assert.equal((await this.wrnRewardPoolV2.varAdded()).valueOf(), 1234);
   });
+
+  it('should fail if non-admin user try to upgrade', async () => {
+    await admin.changeProxyAdmin(this.wrnRewardPool.address, alice);
+
+    await expectRevert(
+      upgradeProxy(this.wrnRewardPool.address, WRNRewardPoolV2Test, { unsafeAllowCustomTypes: true }),
+      'Proxy admin is not the one registered in the network manifest'
+    );
+  });
+
+  // TODO: How can we renounce ownership? - await admin.transferProxyAdminOwnership('0x0000000000000000000000000000000000000000')?
 });
