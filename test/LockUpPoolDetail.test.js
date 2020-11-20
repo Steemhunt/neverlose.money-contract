@@ -36,7 +36,7 @@ contract('LockUp and Exit', ([creator, alice, bob, carol]) => {
     await this.lockUpPool.doLockUp(this.hunt.address, toBN(1000), 12, { from: alice }); // duration boost: 4x
 
     // Total lockUp stats
-    const [, totalLockUp, effectiveTotalLockUp, , ,] = Object.values(await this.lockUpPool.tokenStats(this.hunt.address, { from: creator }));
+    const [, totalLockUp, effectiveTotalLockUp] = Object.values(await this.lockUpPool.tokenStats(this.hunt.address, { from: creator }));
     assert.equal(totalLockUp.valueOf(), toBN(2000));
     assert.equal(effectiveTotalLockUp.valueOf(), toBN(5000));
 
@@ -44,22 +44,23 @@ contract('LockUp and Exit', ([creator, alice, bob, carol]) => {
     await this.lockUpPool.exit(this.hunt.address, 0, true, { from: alice });
 
     // My lockUp stats
-    const [amount, effectiveAmount,,,] = Object.values(await this.lockUpPool.userLockUps(this.hunt.address, creator, { from: creator }));
+    const [amount, effectiveAmount] = Object.values(await this.lockUpPool.userLockUps(this.hunt.address, creator, { from: creator }));
     assert.equal(amount.valueOf(), toBN(1000));
     assert.equal(effectiveAmount.valueOf(), toBN(1000));
-    const [amount1, effectiveAmount1,,,] = Object.values(await this.lockUpPool.userLockUps(this.hunt.address, alice, { from: alice }));
+    const [amount1, effectiveAmount1] = Object.values(await this.lockUpPool.userLockUps(this.hunt.address, alice, { from: alice }));
     assert.equal(amount1.valueOf(), 0);
     assert.equal(effectiveAmount1.valueOf(), 0);
 
     // Total lockUp stats
-    const [, totalLockUp1, effectiveTotalLockUp1, totalPenalty, totalPlatformFee,] = Object.values(await this.lockUpPool.tokenStats(this.hunt.address, { from: creator }));
-    assert.equal(totalLockUp1.valueOf(), toBN(1000));
-    assert.equal(effectiveTotalLockUp1.valueOf(), toBN(1000));
+    const [, totalLockUp1, effectiveTotalLockUp1, , totalPenalty, accTotalLockUp] = Object.values(await this.lockUpPool.tokenStats(this.hunt.address));
+    assert.equal(+totalLockUp1, toBN(1000));
+    assert.equal(+effectiveTotalLockUp1, toBN(1000));
 
     assert.equal((await this.hunt.balanceOf(await this.lockUpPool.fundAddress().valueOf())).valueOf(), toBN(30)); // 3% platform fee should go to the fund
     assert.equal((await this.hunt.balanceOf(alice)).valueOf(), toBN(870)); // 10% penalty + 3% platform fees are deducted
-    assert.equal(totalPenalty, toBN(100));
-    assert.equal(totalPlatformFee, toBN(30));
+    assert.equal(+totalPenalty, toBN(100));
+    assert.equal(+accTotalLockUp, toBN(2000));
+    // assert.equal(totalPlatformFee, toBN(30)); - not recorded
   });
 
   it('penalty should be distributed to the participants', async () => {
@@ -111,14 +112,13 @@ contract('LockUp and Exit', ([creator, alice, bob, carol]) => {
     await this.lockUpPool.exit(this.hunt.address, 1, true, { from: alice });
     assert.equal((await this.lockUpPool.earnedBonus(this.hunt.address, { from: bob })).valueOf(), toBN(10));
 
-    const [, totalLockUp, effectiveTotalLockUp, totalPenalty, totalPlatformFee, totalClaimed] = Object.values(await this.lockUpPool.tokenStats(this.hunt.address, { from: creator }));
-    assert.equal(totalLockUp.valueOf(), toBN(1000));
-    assert.equal(effectiveTotalLockUp.valueOf(), toBN(1000));
-    assert.equal(totalPenalty.valueOf(), toBN(210));
-    assert.equal(totalPlatformFee.valueOf(), toBN(63));
-    assert.equal(totalClaimed.valueOf(), toBN(100));
-    assert.equal((await this.lockUpPool.totalClaimableBonus(this.hunt.address)).valueOf(), toBN(110));
-     // but actually, only 100 is claimable because there was a point when the pool emptied out
+    const [, totalLockUp, effectiveTotalLockUp, , totalPenalty, accTotalLockUp] = Object.values(await this.lockUpPool.tokenStats(this.hunt.address, { from: creator }));
+    assert.equal(+totalLockUp, toBN(1000));
+    assert.equal(+effectiveTotalLockUp, toBN(1000));
+    assert.equal(+totalPenalty, toBN(210));
+    assert.equal(+accTotalLockUp, toBN(3100));
+    // assert.equal(totalPlatformFee.valueOf(), toBN(63)); - not recorded
+    // assert.equal(totalClaimed.valueOf(), toBN(100)); - not recorded
   });
 
   it('lock-up comes later should not affect already earned bonus of former users', async () => {

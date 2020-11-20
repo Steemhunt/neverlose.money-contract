@@ -25,8 +25,6 @@ contract LockUpPool is Initializable, OwnableUpgradeSafe {
     uint256 amount;
     uint256 effectiveAmount; // amount * durationBoost
     uint256 exitedAt;
-    uint256 penalty;
-    uint256 fee;
   }
 
   struct UserLockUp {
@@ -41,12 +39,10 @@ contract LockUpPool is Initializable, OwnableUpgradeSafe {
 
   struct TokenStats {
     uint256 maxLockUpLimit;
-    uint256 totalLockUp; // info
+    uint256 totalLockUp;
     uint256 effectiveTotalLockUp; // sum(amount * durationBoost)
-    uint256 totalPenalty; // info
-    uint256 totalPlatformFee; // info
-    uint256 totalClaimed; // info
     uint256 accBonusPerShare; // Others' Penalty = My Bonus
+    uint256 totalPenalty; // info
     uint256 accTotalLockUp; // info
     uint40 accLockUpCount; // info
     uint40 activeLockUpCount; // info
@@ -166,9 +162,7 @@ contract LockUpPool is Initializable, OwnableUpgradeSafe {
         block.timestamp.add(durationInMonths * SECONDS_IN_MONTH), // unlockedAt
         amount,
         effectiveAmount,
-        0, // exitedAt
-        0, // penalty
-        0 // fee
+        0 // exitedAt
       )
     );
 
@@ -222,15 +216,12 @@ contract LockUpPool is Initializable, OwnableUpgradeSafe {
 
     // Update lockUp
     lockUp.exitedAt = block.timestamp;
-    lockUp.penalty = penalty;
-    lockUp.fee = fee;
 
     // Update token stats
     TokenStats storage tokenStat = tokenStats[tokenAddress];
     tokenStat.totalLockUp = tokenStat.totalLockUp.sub(lockUp.amount);
     tokenStat.effectiveTotalLockUp = tokenStat.effectiveTotalLockUp.sub(lockUp.effectiveAmount);
     tokenStat.totalPenalty = tokenStat.totalPenalty.add(penalty);
-    tokenStat.totalPlatformFee = tokenStat.totalPlatformFee.add(fee);
 
     tokenStat.activeLockUpCount = tokenStat.activeLockUpCount - 1;
     if (penalty > 0) {
@@ -278,15 +269,11 @@ contract LockUpPool is Initializable, OwnableUpgradeSafe {
       return;
     }
 
-    TokenStats storage tokenStat = tokenStats[tokenAddress];
     UserLockUp storage userLockUp = userLockUps[tokenAddress][msg.sender];
 
     // Update user lockUp stats
     userLockUp.bonusClaimed = userLockUp.bonusClaimed.add(amount);
     _updateBonusDebt(tokenAddress, msg.sender);
-
-    // Update token stats
-    tokenStat.totalClaimed = tokenStat.totalClaimed.add(amount);
 
     IERC20(tokenAddress).safeTransfer(msg.sender, amount);
 
@@ -295,15 +282,11 @@ contract LockUpPool is Initializable, OwnableUpgradeSafe {
 
   // MARK: - Utility view functions
 
-  function totalClaimableBonus(address tokenAddress) external view returns (uint256) {
-    return tokenStats[tokenAddress].totalPenalty.sub(tokenStats[tokenAddress].totalClaimed);
-  }
-
   function poolCount() external view returns(uint256) {
     return pools.length;
   }
 
-  function getLockUp(address tokenAddress, address account, uint256 lockUpId) external view returns (uint256, uint256, uint256, uint256, uint256, uint256, uint256) {
+  function getLockUp(address tokenAddress, address account, uint256 lockUpId) external view returns (uint8, uint256, uint256, uint256, uint256) {
     LockUp storage lockUp = userLockUps[tokenAddress][account].lockUps[lockUpId];
 
     return (
@@ -311,9 +294,7 @@ contract LockUpPool is Initializable, OwnableUpgradeSafe {
       lockUp.unlockedAt,
       lockUp.amount,
       lockUp.effectiveAmount,
-      lockUp.exitedAt,
-      lockUp.penalty,
-      lockUp.fee
+      lockUp.exitedAt
     );
   }
 
