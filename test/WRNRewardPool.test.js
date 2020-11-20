@@ -379,4 +379,31 @@ contract('WRN Reward Pool Test', ([creator, alice, bob]) => {
     assert.equal((await this.wrnRewardPool.pendingWRN(this.hunt.address, { from: alice })).valueOf() / 1e18, 0.25);
     assert.equal((await this.wrnRewardPool.pendingWRN(this.hunt.address, { from: bob })).valueOf() / 1e18, 0.5625);
   });
+
+  it('should be able to cliam pending WRN and bonus at once', async () => {
+    await this.wrnRewardPool.doLockUp(this.hunt.address, toBN(100), 3, { from: alice });
+    // Block 1 - alice: 0
+    await this.wrnRewardPool.doLockUp(this.hunt.address, toBN(100), 3, { from: bob });
+    // Block 1 - alice: 0.5 / bob: 0
+    assert.equal((await this.wrnRewardPool.pendingWRN(this.hunt.address, { from: alice })).valueOf() / 1e18, 0.5);
+    assert.equal((await this.wrnRewardPool.pendingWRN(this.hunt.address, { from: bob })).valueOf() / 1e18, 0);
+
+    await this.wrnRewardPool.exit(this.hunt.address, 0, true, { from: alice });
+    // Block 2 - alice: 0.75 / bob: 0.25
+    // Penalty generated: +10 HUNT
+    assert.equal((await this.wrn.balanceOf(alice)).valueOf() / 1e18, 0.75);
+    assert.equal((await this.hunt.balanceOf(alice)).valueOf() / 1e18, 487);
+
+    await this.wrnRewardPool.claimWRNandBonus(this.hunt.address, { from: bob });
+    // Block 3 - bob: 0.75
+
+    assert.equal((await this.wrn.balanceOf(bob)).valueOf() / 1e18, 0.75);
+    assert.equal((await this.hunt.balanceOf(bob)).valueOf() / 1e18, 410); // 500 - 100 + 10
+
+    // Additional checks (duplicated)
+    assert.equal((await this.wrn.totalSupply()).valueOf() / 1e18, 1.5 + 1.5/9);
+    const fundAddress = await this.wrnRewardPool.fundAddress().valueOf();
+    assert.equal((await this.wrn.balanceOf(fundAddress)).valueOf() / 1e18, 1.5/9);
+    assert.equal((await this.hunt.balanceOf(fundAddress)).valueOf() / 1e18, 3);
+  });
 });
