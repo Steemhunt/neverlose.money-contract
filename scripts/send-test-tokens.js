@@ -13,9 +13,9 @@ const infuraProvider = (network) => {
 const web3 = new Web3(infuraProvider('goerli'));
 
 const tokenAddresses = {
-  HUNT: '0x853bCea4C256873d848072a207cc07dEf695faC8',
-  WETH: '0xf4540e848448AF2357D5ba6210b88CcD8e7B1b4E',
-  WBTC: '0xc0f4FC816968283D52a096d951094a9C1c037B13'
+  HUNT: '0xD409b07cC381c3D831F7fD71C4141c86DdC2a5c6',
+  WETH: '0x608f8CeB3Af57Dd3b56b480B51dcfd7E7096acA3',
+  WBTC: '0x48A32932F3BD2Fd7Bb31c97570290dE9d1e8827C'
 }
 
 async function sendETH(from, to, amount) {
@@ -69,9 +69,9 @@ async function sendAll(to) {
     await sendETH(owner, to, 1);
 
     for (let token in tokenAddresses) {
-      let amount = 10000;
+      let amount = 500000;
       if(token === 'WETH') {
-        amount = 10;
+        amount = 40;
       } else if (token === 'WBTC') {
         amount = 1;
       }

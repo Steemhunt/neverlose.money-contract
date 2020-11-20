@@ -22,12 +22,12 @@ A governance token distribution contract on top of LockUpPool. A maximum of 1.2M
 
 ## Görli (goerli) Testnet
 - ETH faucet (to pay gas): https://faucet.goerli.mudit.blog/
-- Contract: 0xD5B9A9dB6E11E216e08bF10B0C0e53478315E8C3
+- Lock-up contract: 0x8f62599Ce9E93Cda072EA4F4E86dbaBF3CCC2bC9
 - Test tokens
-  - WRN: 0x64B45af8ED1ABA874144802B34e99262E444202f
-  - HUNT: 0x3cCc84296b4dDf99d628e1472F697c4649A9962F
-  - WETH: 0x0370789664eCBc83a9a44766c2384b9d5A638Dfb
-  - WBTC: 0xF0aa78e4Ea6C717891085879Bd78Fd87a98D8572
+  - WRN: 0xdAecEce4b065595907F04b8a9C96A9B7929Ee626
+  - HUNT: 0xD409b07cC381c3D831F7fD71C4141c86DdC2a5c6
+  - WETH: 0x608f8CeB3Af57Dd3b56b480B51dcfd7E7096acA3
+  - WBTC: 0x48A32932F3BD2Fd7Bb31c97570290dE9d1e8827C
 
 ## Gas consumption
 ```
