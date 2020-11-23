@@ -12,23 +12,24 @@ module.exports = async function (deployer, network, [creator]) {
     // NOTE: Use of `unsafeAllowCustomTypes` as UpgradesPlugins currently do not support validating custom types (enums or structs)
     // REF: https://docs.openzeppelin.com/upgrades-plugins/1.x/faq#what-does-it-mean-for-an-implementation-to-be-compatible
     const wrnToken = await deployProxy(ERC20Token, ['TEST WARREN', 'WRN', 18, toBN(0)], { deployer, unsafeAllowCustomTypes: true });
-    const hunt = await deployProxy(ERC20Token, ['TEST HUNT Token', 'HUNT', 18, toBN(1000000)], { deployer, unsafeAllowCustomTypes: true });
-    const weth = await deployProxy(ERC20Token, ['TEST Wrapped ETH', 'WETH', 18, toBN(10000)], { deployer, unsafeAllowCustomTypes: true });
-    const wbtc = await deployProxy(ERC20Token, ['TEST Wrapped BTC', 'WBTC', 8, toBN(1000, 8)], { deployer, unsafeAllowCustomTypes: true });
+    const hunt = await deployProxy(ERC20Token, ['TEST HUNT Token', 'HUNT', 18, toBN(500000 * 200)], { deployer, unsafeAllowCustomTypes: true });
+    const weth = await deployProxy(ERC20Token, ['TEST Wrapped ETH', 'WETH', 18, toBN(40 * 200)], { deployer, unsafeAllowCustomTypes: true });
+    const wbtc = await deployProxy(ERC20Token, ['TEST Wrapped BTC', 'WBTC', 8, toBN(1 * 200, 8)], { deployer, unsafeAllowCustomTypes: true });
 
     const block = await web3.eth.getBlock("latest");
-    const wrnRewardPool = await deployProxy(WRNRewardPool, [wrnToken.address, block.number, 8800000, 500000], { deployer, unsafeAllowCustomTypes: true });
+    // Reward period will be: 14 days, bonus period: 7 days
+    const wrnRewardPool = await deployProxy(WRNRewardPool, [wrnToken.address, block.number, 100000, 50000], { deployer, unsafeAllowCustomTypes: true });
 
     await wrnToken.addMinter(wrnRewardPool.address, { from: creator });
 
-    await wrnRewardPool.addLockUpRewardPool(hunt.address, 2, toBN(10000), false);
-    await wrnRewardPool.addLockUpRewardPool(weth.address, 1, toBN(10000), false);
-    await wrnRewardPool.addLockUpRewardPool(wbtc.address, 1, toBN(10000, 8), false);
+    await wrnRewardPool.addLockUpRewardPool(hunt.address, 2, toBN(100000000), false);
+    await wrnRewardPool.addLockUpRewardPool(weth.address, 1, toBN(1000000), false);
+    await wrnRewardPool.addLockUpRewardPool(wbtc.address, 1, toBN(100000, 8), false);
 
     console.log(`- Lock-up Contract: ${wrnRewardPool.address}`);
     console.log('- Test tokens');
     console.log(`  - WRN: ${wrnToken.address}\n  - HUNT: ${hunt.address}\n  - WETH: ${weth.address}\n  - WBTC: ${wbtc.address}`);
-    console.log(`Owner: ${await wrnRewardPool.owner()} / Dev: ${await wrnRewardPool.devAddress()}`);
+    console.log(`Owner: ${await wrnRewardPool.owner()} / Fund: ${await wrnRewardPool.fundAddress()}`);
     console.log(`Sum of reward pool multiplers: ${await wrnRewardPool.totalMultiplier()}`);
     console.log(`Owner HUNT balance: ${await hunt.balanceOf(creator)}`);
   } else if (network === 'mainnet') {
@@ -51,7 +52,7 @@ module.exports = async function (deployer, network, [creator]) {
 
     console.log(`-> Lock-up Contract: ${wrnRewardPool.address}`);
     console.log(`-> WRN: ${wrnToken.address}`);
-    console.log(`- Owner: ${await wrnRewardPool.owner()} / Dev: ${await wrnRewardPool.devAddress()}`);
+    console.log(`- Owner: ${await wrnRewardPool.owner()} / Fund: ${await wrnRewardPool.fundAddress()}`);
     console.log(`- Sum of reward pool multiplers: ${await wrnRewardPool.totalMultiplier()}`);
   }
 }

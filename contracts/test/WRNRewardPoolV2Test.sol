@@ -22,11 +22,11 @@ contract WRNRewardPoolV2Test is LockUpPool {
   uint256 public REWARD_PER_BLOCK;
   uint256 public REWARD_END_BLOCK;
   uint256 public REWARD_EARLY_BONUS_END_BLOCK;
-  uint256 public REWARD_EARLY_BONUS_BOOST;
+  uint8 public REWARD_EARLY_BONUS_BOOST;
 
-  uint256 public totalMultiplier;
+  uint16 public totalMultiplier;
   struct WRNStats {
-    uint256 multiplier; // For WRN token distribution
+    uint8 multiplier; // For WRN token distribution
     uint256 accWRNPerShare;
     uint256 lastRewardBlock;
   }
@@ -42,7 +42,7 @@ contract WRNRewardPoolV2Test is LockUpPool {
   // Token => Account => UserWRNReward
   mapping (address => mapping (address => UserWRNReward)) public userWRNRewards;
 
-  event PoolAdded(address indexed tokenAddress, uint256 multiplier, uint256 timestamp);
+  event PoolAdded(address indexed tokenAddress, uint8 multiplier, uint256 timestamp);
   event WRNMinted(address indexed tokenAddress, uint256 amount, uint256 timestamp);
   event WRNClaimed(address indexed tokenAddress, address indexed account, uint256 amount, uint256 timestamp);
 
@@ -50,6 +50,8 @@ contract WRNRewardPoolV2Test is LockUpPool {
   uint256 public varAdded;
 
   function initialize(address WRNAddress, uint256 rewardStartBlock, uint256 rewardBlocks, uint256 bonusBlocks) public initializer {
+    require(bonusBlocks <= rewardBlocks, 'INVALID_PARAM');
+
     LockUpPool.initialize();
 
     WRNToken = ERC20PresetMinterPauserUpgradeSafe(WRNAddress);
@@ -68,8 +70,8 @@ contract WRNRewardPoolV2Test is LockUpPool {
 
   // MARK: - Overiiding LockUpPool
 
-  function addLockUpRewardPool(address tokenAddress, uint256 multiplier, uint256 maxLockUpLimit, bool shouldUpdate) external onlyOwner {
-    require(multiplier >= 0, 'multiplier must be greater than or equal to 0');
+  function addLockUpRewardPool(address tokenAddress, uint8 multiplier, uint256 maxLockUpLimit, bool shouldUpdate) external onlyOwner {
+    require(multiplier >= 0, 'INVALID_MULTIPLIER');
 
     if(shouldUpdate) {
       // NOTE: This could fail with out-of-gas if too many tokens are added.
@@ -86,13 +88,13 @@ contract WRNRewardPoolV2Test is LockUpPool {
     addLockUpPool(tokenAddress, maxLockUpLimit);
 
     wrnStats[tokenAddress].multiplier = multiplier;
-    totalMultiplier = totalMultiplier.add(multiplier);
+    totalMultiplier = totalMultiplier + multiplier;
 
     emit PoolAdded(tokenAddress, multiplier, block.timestamp);
   }
 
-  function updatePoolMultiplier(address tokenAddress, uint256 multiplier, bool shouldUpdate) external onlyOwner {
-    require(multiplier >= 1, 'multiplier must be greater than or equal to 1');
+  function updatePoolMultiplier(address tokenAddress, uint8 multiplier, bool shouldUpdate) external onlyOwner {
+    require(multiplier >= 0, 'INVALID_MULTIPLIER');
 
     if(shouldUpdate) {
       // NOTE: This could fail with out-of-gas if too many tokens are added.
@@ -103,10 +105,10 @@ contract WRNRewardPoolV2Test is LockUpPool {
       // users can temporarily withdraw a bigger WRN reward than they actually have
       // (caused by smaller `totalMultiplier` => bigger `accWRNPerShare`)
 
-      revert('cannot update to a smaller value without updating all pools');
+      revert('UPDATE_ALL_REQUIRED');
     }
 
-    totalMultiplier = totalMultiplier.sub(wrnStats[tokenAddress].multiplier).add(multiplier);
+    totalMultiplier = totalMultiplier - wrnStats[tokenAddress].multiplier + multiplier;
     wrnStats[tokenAddress].multiplier = multiplier;
   }
 
@@ -120,7 +122,7 @@ contract WRNRewardPoolV2Test is LockUpPool {
       .mul(userLockUps[tokenAddress][account].effectiveTotal).div(1e18);
   }
 
-  function doLockUp(address tokenAddress, uint256 amount, uint256 durationInMonths) public override {
+  function doLockUp(address tokenAddress, uint256 amount, uint8 durationInMonths) public override {
     // Should claim WRN before exit, otherwise `pendingWRN` will become zero afterwards
     claimWRN(tokenAddress);
 
@@ -234,6 +236,11 @@ contract WRNRewardPoolV2Test is LockUpPool {
     WRNToken.safeTransfer(msg.sender, amount);
 
     emit WRNClaimed(tokenAddress, msg.sender, amount, block.timestamp);
+  }
+
+  function claimWRNandBonus(address tokenAddress) external {
+    claimWRN(tokenAddress);
+    claimBonus(tokenAddress);
   }
 
   // V2: Changed from 50 -> 49

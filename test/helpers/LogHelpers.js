@@ -2,23 +2,29 @@ const { time } = require('@openzeppelin/test-helpers');
 
 async function printTokenStats(lockUpPool, tokenAddress) {
   const [
-    poolExists,
+    maxLockUpLimit,
     totalLockUp,
     effectiveTotalLockUp,
-    totalPenalty,
-    totalPlatformFee,
-    totalClaimed,
     accBonusPerShare,
+    totalPenalty,
+    accTotalLockUp,
+    accLockUpCount,
+    activeLockUpCount,
+    unlockedCount,
+    brokenCount
   ] = Object.values(await lockUpPool.tokenStats(tokenAddress)).map(v => v.valueOf().toString());
 
   console.log("----------------- Token Stats -----------------\n", {
-    poolExists,
+    maxLockUpLimit,
     totalLockUp,
     effectiveTotalLockUp,
-    totalPenalty,
-    totalPlatformFee,
-    totalClaimed,
     accBonusPerShare,
+    totalPenalty,
+    accTotalLockUp,
+    accLockUpCount,
+    activeLockUpCount,
+    unlockedCount,
+    brokenCount
   });
 }
 
@@ -26,17 +32,20 @@ async function printUserLockUps(lockUpPool, tokenAddress, account) {
   const [
     total,
     effectiveTotal,
+    accTotal,
     bonusClaimed,
     bonusDebt,
     lockedUpCount,
-    lockUps,
+    lockUps
   ] = Object.values(await lockUpPool.userLockUps(tokenAddress, account)).map(v => v.valueOf().toString());
 
   console.log("----------------- User LockUp Stats -----------------\n", {
     total,
     effectiveTotal,
+    accTotal,
     bonusClaimed,
     bonusDebt,
+    lockedUpCount
   });
 }
 

@@ -25,13 +25,13 @@ module.exports = {
     goerli: {
       provider: infuraProvider('goerli'),
       network_id: '5',
-      gas: 5000000,
+      gas: 7000000,
       gasPrice: 5000000000 // 5 gwei
     },
     mainnet: {
       provider: infuraProvider('mainnet'),
       network_id: '1',
-      gas: 5000000,
+      gas: 7000000,
       gasPrice: 31000000000 // 31 gwei
     },
   },
@@ -50,7 +50,8 @@ module.exports = {
     reporter: 'eth-gas-reporter',
     reporterOptions : {
       currency: 'USD',
-      coinmarketcap: '793664cd-7f8f-470f-867b-9de05f7d411d'
+      coinmarketcap: '793664cd-7f8f-470f-867b-9de05f7d411d',
+      gasPrice: 25
     }
   },
   api_keys: {

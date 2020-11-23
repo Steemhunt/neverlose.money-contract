@@ -12,6 +12,8 @@ contract('Basic contract functionality', ([creator, alice]) => {
     await this.lockUpPool.initialize();
 
     await this.lockUpPool.addLockUpPool(this.hunt.address, toBN(9999999999999));
+
+    this.SECONDS_IN_MONTH = +(await this.lockUpPool.SECONDS_IN_MONTH().valueOf());
   });
 
   it('balance of creator should have initial supply', async () => {
@@ -41,12 +43,12 @@ contract('Basic contract functionality', ([creator, alice]) => {
     await this.wbtc.initialize('Wrapped BTC', 'wBTC', 8, 10000);
 
     await this.hunt.approve(this.lockUpPool.address, 1000, { from: creator });
-    await expectRevert(this.lockUpPool.doLockUp(this.wbtc.address, 1000, 9, { from: creator }), 'token pool does not exist');
+    await expectRevert(this.lockUpPool.doLockUp(this.wbtc.address, 1000, 9, { from: creator }), 'POOL_NOT_FOUND');
   });
 
   it('should fail on lack of balance or allowance', async () => {
-    await expectRevert(this.lockUpPool.doLockUp(this.hunt.address, 10001, 9, { from: creator }), 'not enough balance');
-    await expectRevert(this.lockUpPool.doLockUp(this.hunt.address, 1000, 9, { from: creator }), 'not enough allowance');
+    await expectRevert(this.lockUpPool.doLockUp(this.hunt.address, 10001, 9, { from: creator }), 'SafeERC20: low-level call failed');
+    await expectRevert(this.lockUpPool.doLockUp(this.hunt.address, 1000, 9, { from: creator }), 'SafeERC20: low-level call failed');
   });
 
   it('lock up asset properly', async () => {
@@ -87,12 +89,12 @@ contract('Basic contract functionality', ([creator, alice]) => {
 
     await expectRevert(
       this.lockUpPool.doLockUp(this.hunt.address, 1000, 121, { from: creator }),
-      'duration must be between 3 and 120 inclusive'
+      'INVALID_DURATION'
     );
 
     await expectRevert(
       this.lockUpPool.doLockUp(this.hunt.address, 1000, 2, { from: creator }),
-      'duration must be between 3 and 120 inclusive'
+      'INVALID_DURATION'
     );
   });
 
@@ -109,7 +111,7 @@ contract('Basic contract functionality', ([creator, alice]) => {
     await this.hunt.approve(this.lockUpPool.address, 1000, { from: creator });
     await this.lockUpPool.doLockUp(this.hunt.address, 1000, 3, { from: creator });
 
-    await time.increase(86400 * 30 * 4);
+    await time.increase(this.SECONDS_IN_MONTH * 4);
 
     await this.lockUpPool.exit(this.hunt.address, 0, false, { from: creator });
 
@@ -134,55 +136,31 @@ contract('Basic contract functionality', ([creator, alice]) => {
     assert.equal((await this.hunt.balanceOf(alice)).valueOf(), 8700);
     assert.equal((await this.hunt.balanceOf(await this.lockUpPool.fundAddress().valueOf())).valueOf(), 300); // platform fee
 
-    const [
-      durationInMonths,
-      unlockedAt,
-      amount,
-      effectiveAmount,
-      exitedAt,
-      penalty,
-      fee
-    ] = Object.values(await this.lockUpPool.getLockUp(this.hunt.address, alice, 0));
-    assert.equal(durationInMonths, 3);
-    assert.equal(amount, 10000);
-    assert.equal(effectiveAmount, 10000);
-    assert.equal(penalty, 1000);
-    assert.equal(fee, 300);
+    const [, unlockedAt, , , exitedAt] = Object.values(await this.lockUpPool.getLockUp(this.hunt.address, alice, 0));
+    assert.equal(unlockedAt > exitedAt, true);
   });
 
   it('should not cut any fee on matured lockup', async () => {
     await this.hunt.approve(this.lockUpPool.address, 10000, { from: creator });
-    await this.lockUpPool.doLockUp(this.hunt.address, 10000, 6, { from: creator });
-    await time.increase(86400 * 30 * 4);
+    await this.lockUpPool.doLockUp(this.hunt.address, 10000, 3, { from: creator });
+    await time.increase(this.SECONDS_IN_MONTH * 4);
     await this.lockUpPool.exit(this.hunt.address, 0, false, { from: creator });
 
     assert.equal((await this.hunt.balanceOf(creator, { from: creator })).valueOf(), 10000);
 
-    const [
-      durationInMonths,
-      unlockedAt,
-      amount,
-      effectiveAmount,
-      exitedAt,
-      penalty,
-      fee
-    ] = Object.values(await this.lockUpPool.getLockUp(this.hunt.address, creator, 0));
-    assert.equal(durationInMonths, 6);
-    assert.equal(amount, 10000);
-    assert.equal(effectiveAmount, 20000);
-    assert.equal(penalty, 0);
-    assert.equal(fee, 0);
+    const [, unlockedAt, , , exitedAt] = Object.values(await this.lockUpPool.getLockUp(this.hunt.address, creator, 0));
+    assert.equal(unlockedAt < exitedAt, true);
   });
 
   it('should handle double-exits properly', async () => {
     await this.hunt.approve(this.lockUpPool.address, 10000, { from: creator });
     await this.lockUpPool.doLockUp(this.hunt.address, 10000, 3, { from: creator });
-    await time.increase(86400 * 30 * 4);
+    await time.increase(this.SECONDS_IN_MONTH * 4);
     await this.lockUpPool.exit(this.hunt.address, 0, false, { from: creator });
 
     await expectRevert(
       this.lockUpPool.exit(this.hunt.address, 0, false, { from: creator }),
-      'already exited'
+      'ALREADY_EXITED'
     );
 
     assert.equal((await this.hunt.balanceOf(creator, { from: creator })).valueOf(), 10000);
@@ -233,7 +211,7 @@ contract('Basic contract functionality', ([creator, alice]) => {
 
     await expectRevert(
       this.lockUpPool.doLockUp(this.hunt.address, 1, 3),
-      'max limit exceeded for this pool'
+      'MAX_LIMIT_EXCEEDED'
     );
   });
 
@@ -253,7 +231,7 @@ contract('Basic contract functionality', ([creator, alice]) => {
     await this.lockUpPool.setEmergencyMode(true);
     await expectRevert(
       this.lockUpPool.doLockUp(this.hunt.address, 1000, 3),
-      'not allowed during emergency mode is on'
+      'NOT_ALLOWED_IN_EMERGENCY'
     );
   });
 
@@ -263,7 +241,7 @@ contract('Basic contract functionality', ([creator, alice]) => {
     await this.lockUpPool.setEmergencyMode(true);
     await expectRevert(
       this.lockUpPool.exit(this.hunt.address, 0, true),
-      'not allowed during emergency mode is on'
+      'NOT_ALLOWED_IN_EMERGENCY'
     );
   });
 
@@ -279,7 +257,7 @@ contract('Basic contract functionality', ([creator, alice]) => {
     await this.lockUpPool.setEmergencyMode(true);
     await expectRevert(
       this.lockUpPool.exit(this.hunt.address, 0, true, { from: creator }),
-      'not allowed during emergency mode is on'
+      'NOT_ALLOWED_IN_EMERGENCY'
     );
   });
 });
