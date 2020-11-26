@@ -227,11 +227,6 @@ contract WRNRewardPool is LockUpPool {
     emit WRNClaimed(tokenAddress, msg.sender, amount, block.timestamp);
   }
 
-  function claimWRNandBonus(address tokenAddress) external {
-    claimWRN(tokenAddress);
-    claimBonus(tokenAddress);
-  }
-
   // Reserved storage space to allow for layout changes in the future.
   uint256[50] private ______gap;
 }
