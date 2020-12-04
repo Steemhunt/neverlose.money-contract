@@ -90,11 +90,11 @@ contract LockUpPool is Initializable, OwnableUpgradeSafe {
 
     PENALTY_RATE = 10;
     PLATFORM_FEE_RATE = 3;
-    SECONDS_IN_MONTH = 3600; // For TEST: 1 month = 1 hour
-    // SECONDS_IN_MONTH = 2592000; // TODO: Uncomment it on production
+    // SECONDS_IN_MONTH = 3600; // For TEST: 1 month = 1 hour
+    SECONDS_IN_MONTH = 2592000; // TODO: Uncomment it on production
 
-    // fundAddress = address(0x82CA6d313BffE56E9096b16633dfD414148D66b1);  // TODO: Uncomment it on production
-    fundAddress = address(0xFC7041F1d7346e24D0De183a98CC08Eb4DF482B1); // Testnet
+    fundAddress = address(0x82CA6d313BffE56E9096b16633dfD414148D66b1);  // TODO: Uncomment it on production
+    // fundAddress = address(0xFC7041F1d7346e24D0De183a98CC08Eb4DF482B1); // Testnet
   }
 
   modifier _checkPoolExists(address tokenAddress) {

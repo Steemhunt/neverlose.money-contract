@@ -26,13 +26,16 @@ module.exports = {
       provider: infuraProvider('goerli'),
       network_id: '5',
       gas: 7000000,
-      gasPrice: 5000000000 // 5 gwei
+      gasPrice: 5000000000, // 5 gwei
+      skipDryRun: true
     },
     mainnet: {
       provider: infuraProvider('mainnet'),
       network_id: '1',
       gas: 7000000,
-      gasPrice: 31000000000 // 31 gwei
+      gasPrice: 20000000000, // 20 gwei
+      timeoutBlocks: 9999,
+      skipDryRun: true
     },
   },
   compilers: {
@@ -51,7 +54,7 @@ module.exports = {
     reporterOptions : {
       currency: 'USD',
       coinmarketcap: '793664cd-7f8f-470f-867b-9de05f7d411d',
-      gasPrice: 25
+      gasPrice: 20
     }
   },
   api_keys: {
