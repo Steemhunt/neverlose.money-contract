@@ -37,9 +37,9 @@ module.exports = async function (deployer, network, [creator]) {
     const WETH_ADDRESS = '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2';
     const WBTC_ADDRESS = '0x2260fac5e5542a773aa44fbcfedf7c193bc2c599';
 
-    // Estimated target: Thu Dec 03 2020 16:27:59 GMT+0900
-    // REF: http://etherscan.io/block/countdown/11378300
-    const REWARD_START_BLOCK = 11378300;
+    // Estimated target: Thu Dec 17 2020 16:14:06 GMT+0900
+    // REF: https://etherscan.io/block/countdown/11469500
+    const REWARD_START_BLOCK = 11469500;
 
     const wrnToken = await deployProxy(ERC20Token, ['TEST WARREN', 'WRN', 18, toBN(0)], { deployer, unsafeAllowCustomTypes: true }); // TODO: Change when actually deploy
     const wrnRewardPool = await deployProxy(WRNRewardPool, [wrnToken.address, REWARD_START_BLOCK, 8800000, 500000], { deployer, unsafeAllowCustomTypes: true });
