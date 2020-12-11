@@ -47,14 +47,17 @@ contract WRNRewardPool is LockUpPool {
 
     WRNToken = ERC20PresetMinterPauserUpgradeSafe(WRNAddress);
 
-    // Total of 1M WRN tokens will be distributed for 4 years
-    //  - 0.1 WRN per block by default
+    // Total of 1.2M WRN tokens will be distributed for 3.6 years
     //  - 0.5 WRN per block for beta users (early participants)
+    //  - 0.1 WRN per block after the bonus period
+    // rewardBlocks = 8,800,000, bonusBlocks = 500,000
+    // -> 500,000 * 0.5 + 8,300,000 * 0.1 = 1,080,000 (distribution)
+    // + 1,080,000 / 9 = 120,000 (dev pool)
     REWARD_START_BLOCK = rewardStartBlock;
     REWARD_PER_BLOCK = 1e17; // 0.1 WRN
-    REWARD_END_BLOCK = REWARD_START_BLOCK.add(rewardBlocks); // 8.8M blocks (appx 4 years and 3 months)
+    REWARD_END_BLOCK = REWARD_START_BLOCK.add(rewardBlocks); // 8.8M blocks (appx 3 years and 7 months)
 
-    // 5x distribution for the first 500k blocks (appx 3 months)
+    // 5x distribution for the first 500k blocks (appx 75 days)
     REWARD_EARLY_BONUS_END_BLOCK = REWARD_START_BLOCK.add(bonusBlocks);
     REWARD_EARLY_BONUS_BOOST = 5;
   }
