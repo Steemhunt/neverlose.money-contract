@@ -107,10 +107,12 @@ contract LockUpPool is Initializable, OwnableUpgradeSafe {
     _;
   }
 
+  // NOTE: This should have been an internal function, but it's defined as public for unit tests
   // Should be called on WRNRewardPool#addLockUpRewardPool
   function addLockUpPool(address tokenAddress, uint256 maxLockUpLimit) public onlyOwner {
     require(tokenAddress.isContract(), 'INVALID_TOKEN');
     require(tokenStats[tokenAddress].maxLockUpLimit == 0, 'POOL_ALREADY_EXISTS');
+    require(maxLockUpLimit > 0, 'INVALID_LIMIT');
 
     pools.push(tokenAddress);
     tokenStats[tokenAddress].maxLockUpLimit = maxLockUpLimit;
