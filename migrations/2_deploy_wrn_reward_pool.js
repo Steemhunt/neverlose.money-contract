@@ -41,7 +41,7 @@ module.exports = async function (deployer, network, [creator]) {
     // REF: https://etherscan.io/block/countdown/11469300
     const REWARD_START_BLOCK = 11469300;
 
-    const wrnToken = await deployProxy(ERC20Token, ['Warren', 'WRN', 18, toBN(0)], { deployer, unsafeAllowCustomTypes: true }); // TODO: Change when actually deploy
+    const wrnToken = await deployProxy(ERC20Token, ['Warren', 'WRN', 18, toBN(0)], { deployer, unsafeAllowCustomTypes: true });
     const wrnRewardPool = await deployProxy(WRNRewardPool, [wrnToken.address, REWARD_START_BLOCK, 8800000, 500000], { deployer, unsafeAllowCustomTypes: true });
     await wrnToken.addMinter(wrnRewardPool.address, { from: creator });
 
