@@ -22,6 +22,7 @@ A governance token distribution contract on top of LockUpPool. A maximum of 1.2M
 
 ## Contract addresses
 - Lock-up contract: [0x4DbeC71037A98a15e228b72F8ff453d1f65401CC](https://etherscan.io/address/0x4DbeC71037A98a15e228b72F8ff453d1f65401CC)
+  - Reward starting block: [11,469,300](https://etherscan.io/block/countdown/11469300)
 - Warren (WRN) token: [0x65468d6f0B2514D9f431000F40685043e36eb7c6](https://etherscan.io/address/0x65468d6f0B2514D9f431000F40685043e36eb7c6)
 
 ## Gas consumption
