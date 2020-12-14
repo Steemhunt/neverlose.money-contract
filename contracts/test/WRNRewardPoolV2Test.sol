@@ -22,11 +22,11 @@ contract WRNRewardPoolV2Test is LockUpPool {
   uint256 public REWARD_PER_BLOCK;
   uint256 public REWARD_END_BLOCK;
   uint256 public REWARD_EARLY_BONUS_END_BLOCK;
-  uint8 public REWARD_EARLY_BONUS_BOOST;
+  uint256 public REWARD_EARLY_BONUS_BOOST;
 
-  uint16 public totalMultiplier;
+  uint256 public totalMultiplier;
   struct WRNStats {
-    uint8 multiplier; // For WRN token distribution
+    uint256 multiplier; // For WRN token distribution
     uint256 accWRNPerShare;
     uint256 lastRewardBlock;
   }
@@ -42,7 +42,7 @@ contract WRNRewardPoolV2Test is LockUpPool {
   // Token => Account => UserWRNReward
   mapping (address => mapping (address => UserWRNReward)) public userWRNRewards;
 
-  event PoolAdded(address indexed tokenAddress, uint8 multiplier, uint256 timestamp);
+  event PoolAdded(address indexed tokenAddress, uint256 multiplier, uint256 timestamp);
   event WRNMinted(address indexed tokenAddress, uint256 amount, uint256 timestamp);
   event WRNClaimed(address indexed tokenAddress, address indexed account, uint256 amount, uint256 timestamp);
 
@@ -70,7 +70,7 @@ contract WRNRewardPoolV2Test is LockUpPool {
 
   // MARK: - Overiiding LockUpPool
 
-  function addLockUpRewardPool(address tokenAddress, uint8 multiplier, uint256 maxLockUpLimit, bool shouldUpdate) external onlyOwner {
+  function addLockUpRewardPool(address tokenAddress, uint256 multiplier, uint256 maxLockUpLimit, bool shouldUpdate) external onlyOwner {
     require(multiplier >= 0, 'INVALID_MULTIPLIER');
 
     if(shouldUpdate) {
@@ -93,7 +93,7 @@ contract WRNRewardPoolV2Test is LockUpPool {
     emit PoolAdded(tokenAddress, multiplier, block.timestamp);
   }
 
-  function updatePoolMultiplier(address tokenAddress, uint8 multiplier, bool shouldUpdate) external onlyOwner {
+  function updatePoolMultiplier(address tokenAddress, uint256 multiplier, bool shouldUpdate) external onlyOwner {
     require(multiplier >= 0, 'INVALID_MULTIPLIER');
 
     if(shouldUpdate) {
@@ -122,7 +122,7 @@ contract WRNRewardPoolV2Test is LockUpPool {
       .mul(userLockUps[tokenAddress][account].effectiveTotal).div(1e18);
   }
 
-  function doLockUp(address tokenAddress, uint256 amount, uint8 durationInMonths) public override {
+  function doLockUp(address tokenAddress, uint256 amount, uint256 durationInMonths) public override {
     // Should claim WRN before exit, otherwise `pendingWRN` will become zero afterwards
     claimWRN(tokenAddress);
 

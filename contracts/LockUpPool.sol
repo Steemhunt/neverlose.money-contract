@@ -13,14 +13,14 @@ contract LockUpPool is Initializable, OwnableUpgradeSafe {
   using SafeERC20 for IERC20;
 
   // NOTE: didn't use actual constant variable just in case we may chage it on upgrades
-  uint8 public PENALTY_RATE;
-  uint8 public PLATFORM_FEE_RATE;
-  uint24 public SECONDS_IN_MONTH;
+  uint256 public PENALTY_RATE;
+  uint256 public PLATFORM_FEE_RATE;
+  uint256 public SECONDS_IN_MONTH;
 
   bool public emergencyMode;
 
   struct LockUp {
-    uint8 durationInMonths;
+    uint256 durationInMonths;
     uint256 unlockedAt; // NOTE: Potential block time manipulation by miners
     uint256 amount;
     uint256 effectiveAmount; // amount * durationBoost
@@ -133,7 +133,7 @@ contract LockUpPool is Initializable, OwnableUpgradeSafe {
     return durationBoost;
   }
 
-  function doLockUp(address tokenAddress, uint256 amount, uint8 durationInMonths) public virtual _checkPoolExists(tokenAddress) _checkEmergencyMode {
+  function doLockUp(address tokenAddress, uint256 amount, uint256 durationInMonths) public virtual _checkPoolExists(tokenAddress) _checkEmergencyMode {
     require(amount > 0, 'INVALID_AMOUNT');
     require(durationInMonths >= 3 && durationInMonths <= 120, 'INVALID_DURATION');
 
@@ -287,7 +287,7 @@ contract LockUpPool is Initializable, OwnableUpgradeSafe {
     return pools.length;
   }
 
-  function getLockUp(address tokenAddress, address account, uint256 lockUpId) external view returns (uint8, uint256, uint256, uint256, uint256) {
+  function getLockUp(address tokenAddress, address account, uint256 lockUpId) external view returns (uint256, uint256, uint256, uint256, uint256) {
     LockUp storage lockUp = userLockUps[tokenAddress][account].lockUps[lockUpId];
 
     return (

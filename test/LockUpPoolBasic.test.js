@@ -140,6 +140,17 @@ contract('Basic contract functionality', ([creator, alice]) => {
     assert.equal(unlockedAt > exitedAt, true);
   });
 
+  it('should calculate unlockedAt properly', async () => {
+    await this.hunt.transfer(alice, 10000, { from: creator });
+    await this.hunt.approve(this.lockUpPool.address, 10000, { from: alice });
+    await this.lockUpPool.doLockUp(this.hunt.address, 10000, 120, { from: alice });
+
+    const lockedUpAt = (await this.lockUpPool.lockedUpAt(this.hunt.address, alice, 0)).valueOf();
+    const [, unlockedAt] = Object.values(await this.lockUpPool.getLockUp(this.hunt.address, alice, 0));
+
+    assert.equal(+lockedUpAt + 120 * 2592000, +unlockedAt);
+  });
+
   it('should not cut any fee on matured lockup', async () => {
     await this.hunt.approve(this.lockUpPool.address, 10000, { from: creator });
     await this.lockUpPool.doLockUp(this.hunt.address, 10000, 3, { from: creator });
