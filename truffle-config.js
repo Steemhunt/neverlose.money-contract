@@ -33,7 +33,7 @@ module.exports = {
       provider: infuraProvider('mainnet'),
       network_id: '1',
       gas: 7000000,
-      gasPrice: 60000000000, // 60 gwei
+      gasPrice: 50000000000, // 50 gwei
       timeoutBlocks: 9999,
       skipDryRun: true
     },

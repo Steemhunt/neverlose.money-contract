@@ -2,8 +2,8 @@
   "manifestVersion": "3.1",
   "impls": {
     "0236c37c970548175a40fe52721bc68415db2e347864d721ab9e1669526c9d6e": {
-      "address": "0xf78239eEC1A4a0475f668705D7b404C0c0305C60",
-      "txHash": "0xa2c07f553197f3257a5c1a552a5e114df4206a6caaee12b0f74aa786ec5a4da1",
+      "address": "0xDD1680c6D1190DF4e8AE5eD0D15803600e5f486A",
+      "txHash": "0x2c7db4bcda3fd900109376a77b2030a07e8352582603a35236766c6f1f1580bb",
       "layout": {
         "storage": [
           {
@@ -149,9 +149,9 @@
         }
       }
     },
-    "713b367d0ccc3146932a36d345ab1a2b047145a5917a5a436740b40898994e95": {
-      "address": "0x6de0118Cf0f5F2539f88B4771c17595151E47c39",
-      "txHash": "0xc1c9ca10c3e0c6252316e420e1256f2c4fa2e165d7e61d9ca4307a7595be9ad1",
+    "abb6dd8af66e1314cf13510d14289bfaa3f2bb2397cf3659f4a2e1f2cd11acdc": {
+      "address": "0x65C0DfBB89a35e3e514e0B02eca34aC2E3BBf7EF",
+      "txHash": "0x88ec5bec970a145aac46d106a170c182eb7d42c0482402f57e19aaddd4567588",
       "layout": {
         "storage": [
           {
@@ -193,19 +193,19 @@
           {
             "contract": "LockUpPool",
             "label": "PENALTY_RATE",
-            "type": "t_uint8",
+            "type": "t_uint256",
             "src": "LockUpPool.sol:16"
           },
           {
             "contract": "LockUpPool",
             "label": "PLATFORM_FEE_RATE",
-            "type": "t_uint8",
+            "type": "t_uint256",
             "src": "LockUpPool.sol:17"
           },
           {
             "contract": "LockUpPool",
             "label": "SECONDS_IN_MONTH",
-            "type": "t_uint24",
+            "type": "t_uint256",
             "src": "LockUpPool.sol:18"
           },
           {
@@ -242,7 +242,7 @@
             "contract": "LockUpPool",
             "label": "______gap",
             "type": "t_array(t_uint256)50_storage",
-            "src": "LockUpPool.sol:315"
+            "src": "LockUpPool.sol:313"
           },
           {
             "contract": "WRNRewardPool",
@@ -277,13 +277,13 @@
           {
             "contract": "WRNRewardPool",
             "label": "REWARD_EARLY_BONUS_BOOST",
-            "type": "t_uint8",
+            "type": "t_uint256",
             "src": "WRNRewardPool.sol:19"
           },
           {
             "contract": "WRNRewardPool",
             "label": "totalMultiplier",
-            "type": "t_uint16",
+            "type": "t_uint256",
             "src": "WRNRewardPool.sol:21"
           },
           {
@@ -312,12 +312,6 @@
           "t_uint256": {
             "label": "uint256"
           },
-          "t_uint8": {
-            "label": "uint8"
-          },
-          "t_uint16": {
-            "label": "uint16"
-          },
           "t_mapping(t_address,t_struct(WRNStats)1166_storage)": {
             "label": "mapping(address => struct WRNRewardPool.WRNStats)"
           },
@@ -326,9 +320,6 @@
           },
           "t_array(t_uint256)50_storage": {
             "label": "uint256[50]"
-          },
-          "t_uint24": {
-            "label": "uint24"
           },
           "t_bool": {
             "label": "bool"
@@ -353,7 +344,7 @@
     }
   },
   "admin": {
-    "address": "0x93EF75e111506b0603915C2dBa5B2aBBC72a7ef8",
-    "txHash": "0xe416377acc68bce43f4c913a0f5e80b83ff8730efa3ebad9bc1cd5f4fe751630"
+    "address": "0xaB4bb2A2036fB145892f544E4989175E383d13a9",
+    "txHash": "0x095ab49eed7d39c4a160812789f64ceba8d0723793feb3e682d01c4dbeb076f2"
   }
 }
