@@ -46,6 +46,7 @@ Thumbs.db
 storage/*
 
 build/*
+build-*
 
 # OpenZeppelin
 .openzeppelin/dev-*.json
