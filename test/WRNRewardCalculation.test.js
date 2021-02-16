@@ -9,7 +9,7 @@ const INFINITY = 9999999999999;
 async function initializeRewardPool(that, startBlock, rewardBlocks = INFINITY, bonusBlocks = INFINITY) {
   that.wrnRewardPool = await WRNRewardPool.new();
   that.actualStartBlock = +(await time.latestBlock().valueOf()) + startBlock;
-  await that.wrnRewardPool.initialize(that.wrn.address, that.actualStartBlock, rewardBlocks, bonusBlocks); // +1
+  await that.wrnRewardPool.initialize(that.wrn.address, that.actualStartBlock, rewardBlocks, bonusBlocks, 1e17); // +1
   await that.wrn.addMinter(that.wrnRewardPool.address);  // +2
   await that.wrnRewardPool.addLockUpRewardPool(that.hunt.address, 2, INFINITY, false);  // +3
   await that.hunt.approve(that.wrnRewardPool.address, INFINITY);  // +4

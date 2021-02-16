@@ -21,7 +21,7 @@ contract('WRN Reward Pool Test', ([creator, alice, bob]) => {
     await this.wrn.initialize('Warren Token', 'WRN', 18, toBN(0));
 
     this.wrnRewardPool = await WRNRewardPool.new({ from: creator });
-    await this.wrnRewardPool.initialize(this.wrn.address, await time.latestBlock().valueOf(), 8800000, 500000);
+    await this.wrnRewardPool.initialize(this.wrn.address, await time.latestBlock().valueOf(), 8800000, 500000, 1e17);
 
     // Add minter
     await this.wrn.addMinter(this.wrnRewardPool.address, { from: creator });

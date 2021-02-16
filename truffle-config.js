@@ -3,40 +3,22 @@ const HDWalletProvider = require('@truffle/hdwallet-provider');
 
 dotenv.config();
 
-const infuraProvider = (network) => {
-  return new HDWalletProvider(
-    process.env.MNEMONIC,
-    `https://${network}.infura.io/v3/${process.env.INFURA_PROJECT_ID}`
-  )
-}
-
 module.exports = {
   networks: {
-    development: {
-      host: "127.0.0.1",
-      port: 7545,
-      network_id: "*"
-    },
-    test: {
-      host: "127.0.0.1",
-      port: 7545,
-      network_id: "*"
-    },
-    goerli: {
-      provider: infuraProvider('goerli'),
-      network_id: '5',
-      gas: 7000000,
-      gasPrice: 5000000000, // 5 gwei
+    bsctest: {
+      provider: () => new HDWalletProvider(process.env.BSC_MNEMONIC, `https://data-seed-prebsc-1-s1.binance.org:8545`),
+      network_id: 97,
+      confirmations: 3,
+      timeoutBlocks: 200,
       skipDryRun: true
     },
-    mainnet: {
-      provider: infuraProvider('mainnet'),
-      network_id: '1',
-      gas: 7000000,
-      gasPrice: 50000000000, // 50 gwei
-      timeoutBlocks: 9999,
+    bscmain: {
+      provider: () => new HDWalletProvider(process.env.BSC_MNEMONIC, `https://bsc-dataseed.binance.org`),
+      network_id: 56,
+      confirmations: 3,
+      timeoutBlocks: 200,
       skipDryRun: true
-    },
+    }
   },
   compilers: {
     solc: {
@@ -58,7 +40,7 @@ module.exports = {
     }
   },
   api_keys: {
-    etherscan: process.env.ETHERSCAN_API_KEY
+    bscscan: process.env.BSCSCAN_API_KEY
   },
   plugins: [
     'truffle-plugin-verify'

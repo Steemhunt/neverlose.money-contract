@@ -1,5 +1,5 @@
 # Neverlose.money - Gamified HODL Protocol
-A lock-up smart contract HODL protocol on Ethereum that pays bonus to the winners with the losers penalty.
+A lock-up smart contract HODL protocol on Binance Smart Chain (BSC) that pays bonus to the winners with the losers penalty.
 
 > "If you aren’t willing to own a stock for ten years, don’t even think about owning it for ten minutes."\
 >\- Warren Buffet -
@@ -18,14 +18,13 @@ A governance token distribution contract on top of LockUpPool. A maximum of 1.2M
 #### Boost Factor
 1. Token Amount: Linear
 2. Lock-up period: 1x (3 months) - 40x (10 years)
-3. Pool multiplier: 2x (HUNT), 1x (WETH), 1x (WBTC)
 
-## Contract addresses
+## Contract addresses [TODO: UPDATE]
 - Lock-up contract: [0x7edBE5aF30Ba6Ba2DE9EdDc72C2f585D1B0D5775](https://etherscan.io/address/0x7edBE5aF30Ba6Ba2DE9EdDc72C2f585D1B0D5775)
   - Reward starting block: [11,469,300](https://etherscan.io/block/countdown/11469300)
 - Warren (WRN) token: [0x6a76Fe028056717703F357d1D073B439e4D24b0E](https://etherscan.io/address/0x6a76Fe028056717703F357d1D073B439e4D24b0E)
 
-## Gas consumption
+## Gas consumption [TODO: UPDATE]
 ```
 ·------------------------------------------------|---------------------------|--------------|----------------------------·
 |      Solc version: 0.7.1+commit.f4a555be       ·  Optimizer enabled: true  ·  Runs: 1500  ·  Block limit: 6718946 gas  │

@@ -3,7 +3,7 @@ const dotenv = require('dotenv');
 dotenv.config();
 
 module.exports = async function (deployer, network, [creator]) {
-  if (network !== 'test') {
+  if (network === 'mainnet') {
     // Use address of your Gnosis Safe
     console.log(`Change proxy admin from ${creator} to ${process.env.GNOSIS_SAFE}`);
 
